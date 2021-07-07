@@ -13,7 +13,7 @@ rgb = imread(file_datos);
 gray_image = rgb2gray(rgb);
 
 %Con 70 anda bastante bien
-nivel_gris = 40;  
+nivel_gris = 70;  
 modif = detectar_color(rgb,nivel_gris);
 
 figure('Name','Imagen original')
@@ -21,13 +21,13 @@ imshow(rgb);
 % linea para poder medir las circunferencias a marcar
 d = imdistline;
 
-%%
+%% Etapa de filtrado inicial
 figure('Name','Imagen con filtro de gris')
 imshow(modif);
-
+% Filtrado Gauseeano
 PSF = fspecial('gaussian',7,7);
-
-iter = 5;
+iter = 5; % iteraciones del filtirado
+% Deconvolución
 luc1 = deconvlucy(modif,PSF,iter);
 imshow(luc1)
 
