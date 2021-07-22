@@ -1,4 +1,4 @@
-%% ======= Filtrado gauseano, eliminacion de artefactos
+%% ======= Eliminacion de artefactos
 % Autor: RODRIGUEZ RUIZ DIAZ, Hernan Jorge
 % Se utiliza la medicion del contraste de Weber para obtener los puntos
 % donde se producen los artefactos por la iluminacion en el lente. Para

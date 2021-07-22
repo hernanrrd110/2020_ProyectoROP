@@ -12,51 +12,48 @@ addpath('./Funciones');
 addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
-[im_RGB,M,N,t] = cargar_imagen();
+[im_RGB_mascara,M1,N1,t1] = cargar_imagen();
+[im_RGB_original,M,N,t] = cargar_imagen();
 
 % Mostrar imagen en RGB
-f = figure('Name', 'imagen RGB y HSV originales');
+f = figure('Name', 'imagen original y la mascara');
 subplot 121;
-imshow(im_RGB); title('RGB');
+imshow(im_RGB_original); title('RGB');
 % Conversion a valores HSV
-im_HSV = single(rgb2hsv(im_RGB)); % valores en single en vez de double
+im_HSV_original = single(rgb2hsv(im_RGB_original));
+im_HSV_mascara = single(rgb2hsv(im_RGB_mascara));
 subplot 122;
-imshow(im_HSV); title('HSV');
+imshow(im_RGB_mascara); title('Imagen enmascarada');
 set(f,'WindowStyle','docked') % Fijar la figura en el editor
 
-% Entrada de mouse del pixel a elegir
-[x,y] = ginput(1);
-fprintf(' --- Posicion del pixel seleccionado:\nX = %i \nY = %i',...
-    round(x),round(y));
-
 % Valor de HSV elegido para ser comparado
-hsvVal = im_HSV(round(y),round(x),:);
-hsvVal = reshape(hsvVal,1,3);
-fprintf('\n --- Valor HSV del pixel seleccionado\n')
-fprintf('Tonalidad(H): %.4f\n',hsvVal(1))
-fprintf('Saturacion(S): %.4f\n',hsvVal(2))
-fprintf('Valor(V): %.4f\n',hsvVal(3))
+MaxH = max(im_HSV_mascara(:,:,1));MaxH = max(MaxH);
+MaxS = max(im_HSV_mascara(:,:,2));MaxS = max(MaxS);
+MaxV = max(im_HSV_mascara(:,:,3));MaxV = max(MaxV);
+MinH = min(im_HSV_mascara(:,:,1));MinH = min(MinH);
+MinS = min(im_HSV_mascara(:,:,2));MinS = min(MinS);
+MinV = min(im_HSV_mascara(:,:,3));MinV = min(MinV);
 
 %%  ========= Analisis de tonalidad en el espacio HSV 
 % Tolerancia para los valores H, S y V del espacio de colores
 % respectivamente
 tol = [0.1 0.1 0.1];
 fprintf('Tolerancia elegida: %.2f\n',tol(1));
-[mascara_HSV, contador_pix] = enmascar_HSV(im_HSV,tol,hsvVal);
+[mascara_HSV] = enmascar_HSV(im_HSV_original,tol,hsvVal);
 
 % Imagen Original contra imagen detectada
 f = figure('Name', 'imagen RGB y HSV originales');
 set(f,'WindowStyle','docked') % Fijar la figura en el editor
-subplot(1,2,1),imshow(im_RGB); title('Imagen Original');
+subplot(1,2,1),imshow(im_RGB_original); title('Imagen Original');
 subplot(1,2,2),imshow(mascara_HSV,[]); title('Areas detectadas');
 
-fprintf('\n --- Puntuacion de frame en Clasificacion HSV: ')
-fprintf('%.2f%% \n', (contador_pix/(M*N)*100));
+% Se podria acotar la busqueda a los pixeles en las inmediaciones del pixel
+% seleccionado, algo así como el algoritmo del pintor
 
 %% Grafica de Espacio HSV de la imagen para verificacion
 
 % Espacio HSV de toda la imagen y del pixel seleccionado
-[EspacioHSV, EspacioHSV_marcado] = mostrar_espacioHSV(im_HSV,tol,hsvVal);
+[EspacioHSV, EspacioHSV_marcado] = mostrar_espacioHSV(im_HSV_original,tol,hsvVal);
 
 % Graficacion 
 f = figure('Name', 'Espacio HSV');
