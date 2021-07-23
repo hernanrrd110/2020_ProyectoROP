@@ -10,8 +10,9 @@ clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 
-[im_RGB,M,N,t]= cargar_imagen(); % Funcion para obtener la imagen
-canal_verde = uint8(zeros(size(im_RGB)));
+[im_RGB]= cargar_imagen(); % Funcion para obtener la imagen
+[M,N,t] = size(im_RGB);
+canal_verde = zeros(size(im_RGB));
 canal_verde(:,:,2) = im_RGB(:,:,2);
 
 %%
@@ -34,7 +35,7 @@ set(f,'WindowStyle','docked')
 contrast_Weber = (im_RGB(:,:,2) - im_mediana(:,:,2))...
     ./im_mediana(:,:,2); 
 
-tc = 0.5; % valor de tolerancia
+tc = 0.01; % valor de tolerancia
 im_modif = im_RGB;
 
 for i=1:M

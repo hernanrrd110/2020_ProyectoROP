@@ -14,29 +14,28 @@ addpath('./Funciones');
 addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
-[im_RGB,M,N,t] = cargar_imagen();
-im_Gray = rgb2gray(im_RGB);
+[imRGB,imGray] = cargarimagen();
 
 % Conversion a escala de grises
-fft_imagen = single(fft2(im_Gray));
-modulo_fft = abs(fft_imagen);
+fftImagen = fft2(imGray);
+moduloFFT = abs(fftImagen);
 
 f = figure('Name', 'imagen RGB y FFT de escala de gris');
 subplot 121;
-imshow(im_RGB); title('RGB');
+imshow(imRGB); title('RGB');
 subplot 122;
-imagesc(log(1+abs(fftshift(fft_imagen)))); title('Modulo FFT');
+imagesc(log(1+abs(fftshift(fftImagen)))); title('Modulo FFT');
 
 %% ========= Filtrado Gaussiano ==========
-sigma_m = 0.25;
-sigma_l = 0.1;
+sigmaM = 0.25;
+sigmaL = 0.1;
 
-m_filt_m = imgaussfilt(modulo_fft,sigma_m);
-m_filt_l = imgaussfilt(m_filt_m,sigma_l);
+modFiltM = imgaussfilt(moduloFFT,sigmaM);
+modFiltL = imgaussfilt(modFiltM,sigmaL);
 
-puntaje_freq = norm(m_filt_m - m_filt_l,1)/...
-    norm(modulo_fft - m_filt_m,1);
+puntajeFreq = norm(modFiltM - modFiltL,1)/...
+    norm(moduloFFT - modFiltM,1);
 
-fprintf('Puntaje frecuencial obtenido: %.2f\n',puntaje_freq);
+fprintf('Puntaje frecuencial obtenido: %.2f\n',puntajeFreq);
 
 

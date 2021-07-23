@@ -14,40 +14,61 @@ addpath('./Funciones');
 addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
-[im_RGB,M,N,t] = cargar_imagen();
-% Conversion a escala de grises
-im_Gray = rgb2gray(im_RGB);
+[imRGB,imGray] = cargarimagen();
+[M,N,t] = size(imRGB);
+
 % Calculo fft imagen original
-fft_h = fft2(im_Gray);
-mod_fft_h = abs(fft_h);
+fftH = fft2(imGray);
+fftH = fftshift(fftH);
+modFFTH = abs(fftH);
 
 % --- Graficacion fft
 f = figure('Name', 'imagen RGB y FFT de escala de gris');
 subplot 121;
-imshow(im_RGB); title('RGB');
+imshow(imRGB); title('RGB');
 subplot 122;
-imagesc(log(1+abs(fftshift(fft_h)))); title('Modulo FFT');
+imagesc(log(1+modFFTH)); title('Modulo FFT');
 
 %% ========= Filtrado Gaussiano ==========
 % Parametros de las funciones gausseanas
-sigma_m = [0.25 0.125];
-sigma_l = 0.1;
+sigmaM = 10;
+sigmaL = 5;
 
 % Filtrados
-im_filt_m = imgaussfilt(im_Gray,sigma_m,'FilterDomain','spatial');
-fft_m = fft2(im_filt_m);
-mod_fft_m = abs(fft_m);
+figure();
+subplot 121;
+ventGaussM = fspecial('gaussian',[M,N],sigmaM);
+mesh(ventGaussM); title('Kernel Gauss 1')
+subplot 122;
+ventGaussL = fspecial('gaussian',[M,N],sigmaL);
+mesh(ventGaussL); title('Kernel Gauss 2')
 
-im_filt_l = imgaussfilt(im_filt_m,sigma_l,'FilterDomain','spatial');
-fft_l = fft2(im_filt_l);
-mod_fft_l = abs(fft_l);
+%%
+% Ventaneo gausseano de la fft de la imagen
+fftM = fftH.*ventGaussM; modFFTM = abs(fftM);
+fftL = fftM.*ventGaussL; modFFTL = abs(fftL);
 
-% puntaje_freq = norm(mod_fft_m - mod_fft_l,1)/...
-%     norm(mod_fft_h  - mod_fft_m,1);
+figure();
+subplot 131;
+imagesc(log(1+modFFTH)); title('Modulo FFT original (H)');
+subplot 132;
+imagesc(log(1+modFFTM));title('Modulo FFT M');
+% mesh(modFFTM);
+subplot 133;
+imagesc(log(1+modFFTL));title('Modulo FFT L');
+% mesh(modFFTL);
 
-puntaje_freq = norm(fft_m - fft_l,1)/...
-    norm(fft_h  - fft_m,1);
+%%
+% Resta de los valores complejos de la fft para obtener las medidas
+restaFAltas = fftH-fftM; modRestaFAltas = abs(restaFAltas);
+restaFMedias = fftM-fftL; modRestaFMedias = abs(restaFMedias);
 
-fprintf('Puntaje frecuencial obtenido: %.2f\n',puntaje_freq);
+figure();
+subplot 131;
+imagesc(log(1+modFFTL)); title('Modulo Freq Bajas (H)');
+subplot 132;
+imagesc(log(1+modRestaFMedias));title('Modulo Freq Medias'); 
+subplot 133;
+imagesc(log(1+modRestaFAltas));title('Modulo Freq Altas');
 
-
+puntaje = norm(restaFMedias,1)/norm(restaFAltas,1)

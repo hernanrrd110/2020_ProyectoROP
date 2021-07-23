@@ -1,80 +1,82 @@
 %% ========= Prueba Gabor filter ==========
 % Autor: RODRIGUEZ RUIZ DIAZ, Hernan Jorge
+% Prueba para hacer desde cero una imagen con funcion ondita Gabor y luego
+% hacer el filtrado de una imagen con un kernel Gabor
 
 %% ========= 
 clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
+warning('off');
 
 % Declaracion de vectores y parametros
-rad = pi/180; % factor de conversion
+RAD = pi/180; % factor de conversion
 M = 128; N = 128; % tamanio de pixeles de la imagen
 
 % -- Parametros de senoidal
-uo = -1/80; vo = 1/80; % frecuencias espaciales de la senoidal compleja
-phi = 0; % Desfase de la funciones senoidal
+Uo = -1/80; Vo = 1/80; % frecuencias espaciales de la senoidal compleja
+PHI = 0; % Desfase de la funciones senoidal
 
 % -- Parametros de envolvente gaussiana
-K_gaus = 1; % Magnitud 
-a = 1/50; b = 1/40; % factor escala de X e Y
-theta = 45*rad; % angulo de rotacion
-xo = floor(M/2); yo = floor(N/2); % posicion del centro
+K_GAUSS = 1; % Magnitud 
+A = 1/50; B = 1/40; % factor escala de X e Y
+THETA = 45*RAD; % angulo de rotacion
+Xo = floor(M/2); Yo = floor(N/2); % posicion del centro
 
 % Seno complejo
-seno_comp = zeros(M,N);
+senoComplex = zeros(M,N);
 for i = 1:M
     for j = 1:N
-        seno_comp(i,j) = exp(1i*(2*pi*(uo*i+vo*j)+phi));
+        senoComplex(i,j) = exp(1i*(2*pi*(Uo*i+Vo*j)+PHI));
     end
 end
 
 % Envolvente gaussiana
-wr = zeros(M,N);
+envGauss = zeros(M,N);
 for i = 1:M
     for j = 1:N
-        xr = (i-xo)*cos(theta)+(j-yo)*sin(theta);
-        yr = -(i-xo)*sin(theta)+(j-yo)*cos(theta);
-        wr(i,j) = K_gaus * exp(-pi*((a*xr)^2+(b*yr)^2));
+        xr = (i-Xo)*cos(THETA)+(j-Yo)*sin(THETA);
+        yr = -(i-Xo)*sin(THETA)+(j-Yo)*cos(THETA);
+        envGauss(i,j) = K_GAUSS * exp(-pi*((A*xr)^2+(B*yr)^2));
     end
 end
 
-Gabor_filt = seno_comp.*wr;
+gaborWavelet = senoComplex.*envGauss;
 
 % Graficacion
 figure(); 
 subplot 121;
-imshow(real(seno_comp),[-1 1]); title('Parte real senoidal compleja')
+imshow(real(senoComplex),[-1 1]); title('Parte real senoidal compleja')
 subplot 122;
-imshow(real(seno_comp),[-1 1]); title('Parte real senoidal compleja')
+imshow(real(senoComplex),[-1 1]); title('Parte real senoidal compleja')
 figure();
-imshow(wr); title('Envolvente Gaussiana')
+imshow(envGauss); title('Envolvente Gaussiana')
 figure();
 subplot 121;
-imshow(real(Gabor_filt),[-1 1]); title('Parte Real Gabor Wavelet');
+imshow(real(gaborWavelet),[-1 1]); title('Parte Real Gabor Wavelet');
 subplot 122;
-imshow(imag(Gabor_filt),[-1 1]); title('Parte Imag Gabor Wavelet');
+imshow(imag(gaborWavelet),[-1 1]); title('Parte Imag Gabor Wavelet');
 
 %%
 clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 
-[im_RGB,M,N,t] = cargar_imagen('DR1.jpg');
-im_Gray = rgb2gray(im_RGB);
-
+[imRGB,imGray] = cargarimagen('DR1.jpg');
+[M,N,t] = size(imRGB);
 % -- Parametros de senoidal
-uo = 0.05; vo = 0.05; % frecuencias espaciales de la senoidal compleja
-phi = 30; % Desfase de la funciones senoidal
+Uo = 0.05; Vo = 0.05; % frecuencias espaciales de la senoidal compleja
+PHI = 30; % Desfase de la funciones senoidal
 
 % -- Parametros de envolvente gaussiana
-K_gaus = 1; % Magnitud 
-a = 10; b = 10; % factor escala de X e Y
-theta = 45; % angulo de rotacion en grados
+K_GAUSS = 1; % Magnitud 
+A = 10; B = 10; % factor escala de X e Y
+THETA = 45; % angulo de rotacion en grados
 
-h_size = [5 5];
-[im_filt] = filtrado_gabor(im_Gray,uo,vo,phi,...
-    K_gaus,a,b,theta,h_size);
+hSize = [5 5];
+[imFilt] = FiltradoGabor(imGray,Uo,Vo,PHI,...
+    K_GAUSS,A,B,THETA,hSize);
 subplot 121;
-imshow(real(im_filt)); title('Parte Real filtrado');
+imshow(real(imFilt)); title('Parte Real filtrado');
 subplot 122;
-imshow(imag(im_filt)); title('Parte Real filtrado');
+imshow(imag(imFilt)); title('Parte Real filtrado');

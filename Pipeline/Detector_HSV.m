@@ -18,34 +18,34 @@ else
     disp(strcat(path,filename));
 end
 
-im_RGB = imread(strcat(path,filename));
-[M,N,t] = size(im_RGB); % Dimensiones de la imagen originales
+imRGB = imread(strcat(path,filename));
+[M,N,t] = size(imRGB); % Dimensiones de la imagen originales
 f = figure('Name', 'imagen RGB y HSV originales');
 
 % Mostrar imagen en RGB
 subplot 121;
-imshow(im_RGB); title('RGB');
+imshow(imRGB); title('RGB');
 
 % Conversion a valores HSV
-im_HSV = single(rgb2hsv(im_RGB)); % valores en single en vez de double
+imHSV = single(rgb2hsv(imRGB)); % valores en single en vez de double
 subplot 122;
-imshow(im_HSV); title('HSV');
+imshow(imHSV); title('HSV');
 set(f,'WindowStyle','docked') % Fijar la figura en el editor
 
 % Entrada de mouse del pixel a elegir
 disp('Posicion del pixel seleccionado: ');
 [x,y] = ginput(1);
 % Valor de HSV elegido para ser comparado
-hsvVal = im_HSV(round(y),round(x),:);
+hsvVal = imHSV(round(y),round(x),:);
 
 %%  ========= Analisis de tonalidad en el espacio HSV ==========
 % Tolerancia para los valores H, S y V del espacio de colores
 % respectivamente
 tol = [0.1 0.1 0.1];
 % Diferencias absolutas entre valores de cada pixel y el valor elegido
-diffH = abs(im_HSV(:,:,1) - hsvVal(1));
-diffS = abs(im_HSV(:,:,2) - hsvVal(2));
-diffV = abs(im_HSV(:,:,3) - hsvVal(3));
+diffH = abs(imHSV(:,:,1) - hsvVal(1));
+diffS = abs(imHSV(:,:,2) - hsvVal(2));
+diffV = abs(imHSV(:,:,3) - hsvVal(3));
 
 % Matrices para ser rellenadas con 1
 I1 = zeros(M,N); I2 = zeros(M,N); I3 = zeros(M,N);
@@ -55,7 +55,7 @@ I1 = zeros(M,N); I2 = zeros(M,N); I3 = zeros(M,N);
 if ( (hsvVal(1)+tol(1))>1 )
 for i=1:M
     for j=1:N
-       if( (0<=im_HSV(i,j,1)) && (im_HSV(i,j,1)<=(tol(1)+hsvVal(1)-1)) )
+       if( (0<=imHSV(i,j,1)) && (imHSV(i,j,1)<=(tol(1)+hsvVal(1)-1)) )
            I1(i,j)= 1;
        end
     end
@@ -63,7 +63,7 @@ end
 elseif ( (hsvVal(1)-tol(1))<0 )
 for i=1:M
     for j=1:N
-       if( (1+hsvVal(1)-tol(1))<=im_HSV(i,j,1) && im_HSV(i,j,1)<=1 )
+       if( (1+hsvVal(1)-tol(1))<=imHSV(i,j,1) && imHSV(i,j,1)<=1 )
            I1(i,j)= 1;
        end
     end
@@ -81,7 +81,7 @@ I = I1.*I2.*I3;
 % Imagen Original contra imagen detectada
 f = figure('Name', 'imagen RGB y HSV originales');
 set(f,'WindowStyle','docked') % Fijar la figura en el editor
-subplot(1,2,1),imshow(im_RGB); title('Imagen Original');
+subplot(1,2,1),imshow(imRGB); title('Imagen Original');
 subplot(1,2,2),imshow(I,[]); title('Areas detectadas');
 
 % Se podria acotar la busqueda a los pixeles en las inmediaciones del pixel
@@ -95,7 +95,7 @@ subplot(1,2,2),imshow(I,[]); title('Areas detectadas');
 % cada fila del vector como una entidad a comparar
 
 % Espacio de toda la imagen
-EspacioHSV = unique( reshape( im_HSV,M*N,3 ) ,'rows' );
+EspacioHSV = unique( reshape( imHSV,M*N,3 ) ,'rows' );
 % Espacio de los pixeles marcados, es decir los pixeles tomados  como de la
 % retina
 EspacioHSV_marcado = zeros(size(EspacioHSV));

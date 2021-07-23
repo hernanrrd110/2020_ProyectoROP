@@ -1,4 +1,4 @@
-function [mascara_HSV, contador_pix] = enmascar_HSV(im_HSV,tol,hsvVal)
+function [mascara_HSV, contador_pix] = enmascarhsv(im_HSV,tol,hsvVal)
 %ENMASCAR_HSV Enmascarado imagen segun el valor de hsv y tolerancia dado.
 %   Establece un conjunto de valores de HSV de la imagen segun los
 %   parametros dados y crea una mascara binaria para los pixeles que

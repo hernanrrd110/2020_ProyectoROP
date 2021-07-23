@@ -1,4 +1,4 @@
-function GW = GaborWavelet (R, C, Kmax, f, u, v, Delt2);
+function GW = gaborwavelet (R, C, Kmax, f, u, v, Delt2)
 % Create the Gabor Wavelet Filter
 % Author : Chai Zhi  
 % e-mail : zh_chai@yahoo.cn

@@ -1,5 +1,5 @@
 function [EspacioHSV, EspacioHSV_marcado] = ...
-    mostrar_espacioHSV(im_HSV,tol,hsvVal)
+    mostrarespaciohsv(im_HSV,tol,hsvVal)
 % Mostrar_espacioHSV
 %
 % Para la graficacion del espacio, se hace en primer lugar un reshape de
