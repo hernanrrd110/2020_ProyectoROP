@@ -6,18 +6,21 @@ function [imRGB,imGray] = cargarimagen(file)
 %   donde se obtiene la imagen. Mismo output.
 %   Parametros:
 %   - file (opcional): nombre del archivo o ruta completa del archivo
-%   - im_RGB: imagen leida directamente del archivo (generalmente en RGB)
-%   - im_Gray (opcional): imagen convertida a escala de grises
+%   Retornos:
+%   - imRGB: imagen leida directamente del archivo (generalmente en RGB)
+%   - imGray (opcional): imagen convertida a escala de grises
 % -------------------------------
     if (nargin == 0) % no se pasa el nombre del archivo por imagen
         [filename, path] = uigetfile ({'*.jpg;*.tif;*.png;*.gif',...
             'All Image Files';'*.*','All Files'},...
-            'Seleccione la imagen a analizar');
+            'Seleccione la imagen');
         if(filename == 0)
             fprintf('No se selecciono archivo\n')
             return;
         else
             fprintf('Archivo Seleccionado:\n ')
+            disp(filename);
+            fprintf('Path:\n ')
             disp(strcat(path,filename));
             imRGB = im2double(imread(strcat(path,filename)));
             
@@ -27,6 +30,8 @@ function [imRGB,imGray] = cargarimagen(file)
     else
         fprintf('Archivo Seleccionado:\n ')
         disp(file);
+        fprintf('Path:\n ')
+        which(file);
         imRGB = im2double(imread(file));
 
     end

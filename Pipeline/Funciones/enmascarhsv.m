@@ -42,7 +42,6 @@ function [mascara_HSV, contador_pix] = enmascarhsv(im_HSV,tol,hsvVal)
     I1(diffH <= tol(1)) = 1;
     I2(diffS <= tol(2)) = 1;
     I3(diffV <= tol(3)) = 1;
-    
    
     mascara_HSV = I1.*I2.*I3;
     contador_pix = 0;

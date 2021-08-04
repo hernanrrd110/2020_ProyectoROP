@@ -30,9 +30,12 @@ subplot 122;
 imagesc(log(1+modFFTH)); title('Modulo FFT');
 
 %% ========= Filtrado Gaussiano ==========
+% En esta parte se crean dos ventanas gausseanas del tamanio de la imagen
+% original MxN, y se vizualizan mediante la herramienta mesh de forma de
+% ver si la forma de la funcion es la correcta
 % Parametros de las funciones gausseanas
-sigmaM = 10;
-sigmaL = 5;
+sigmaM = 0.25;
+sigmaL = 0.1;
 
 % Filtrados
 figure();
@@ -43,7 +46,8 @@ subplot 122;
 ventGaussL = fspecial('gaussian',[M,N],sigmaL);
 mesh(ventGaussL); title('Kernel Gauss 2')
 
-%%
+%% ========= Ventaneo frecuencial ========= 
+% En esta parte se hace le ventaneo a las ffts en forma escalonada
 % Ventaneo gausseano de la fft de la imagen
 fftM = fftH.*ventGaussM; modFFTM = abs(fftM);
 fftL = fftM.*ventGaussL; modFFTL = abs(fftL);
@@ -58,7 +62,7 @@ subplot 133;
 imagesc(log(1+modFFTL));title('Modulo FFT L');
 % mesh(modFFTL);
 
-%%
+%% ======= Resta de frecuencias bajas, medias y altas
 % Resta de los valores complejos de la fft para obtener las medidas
 restaFAltas = fftH-fftM; modRestaFAltas = abs(restaFAltas);
 restaFMedias = fftM-fftL; modRestaFMedias = abs(restaFMedias);

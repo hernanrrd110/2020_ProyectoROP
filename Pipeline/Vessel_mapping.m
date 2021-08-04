@@ -9,6 +9,7 @@ addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
 [imRGB,imGray] = cargarimagen('DR1.jpg');
+[M,N,t] = size(imRGB);
 
 %% ------ Creacion del filtro
 % parametros del filtro
