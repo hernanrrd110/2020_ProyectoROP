@@ -74,8 +74,9 @@ A = 10; B = 10; % factor escala de X e Y
 THETA = 45; % angulo de rotacion en grados
 
 hSize = [5 5];
-[imFilt] = FiltradoGabor(imGray,Uo,Vo,PHI,...
+[imFilt] = filtradogabor(imGray,Uo,Vo,PHI,...
     K_GAUSS,A,B,THETA,hSize);
+
 subplot 121;
 imshow(real(imFilt)); title('Parte Real filtrado');
 subplot 122;

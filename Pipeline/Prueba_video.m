@@ -5,9 +5,9 @@
 clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
-warning('off')
+warning('off');
 
-vidObj = VideoReader('ID6_Video_ROP.mp4');
+vidObj = VideoReader('ID6_Video_ROP_Escalado.mp4');
 resolution = [vidObj.Height vidObj.Width];
 framesNo = round(vidObj.Duration*vidObj.FrameRate);
 % vidFrames = zeros(resolution(1),resolution(2),3,framesNo);
@@ -18,9 +18,10 @@ frameFin = 200;
 vidFrames = read(vidObj,[frameIni frameFin]);
 whos vidFrames
 
-while hasFrame(vidObj)
-    vidFrames(:,:,:,iFrame) = readFrame(vidObj);
-    iFrame = iFrame + 1;
-end
 
-disp('se termino');
+% while hasFrame(vidObj)
+%     vidFrames(:,:,:,iFrame) = readFrame(vidObj);
+%     iFrame = iFrame + 1;
+% end
+% 
+% disp('se termino');

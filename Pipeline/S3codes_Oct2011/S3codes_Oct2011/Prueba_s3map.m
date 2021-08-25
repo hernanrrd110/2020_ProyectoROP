@@ -21,5 +21,3 @@ numOneP = round( length( mapS3(:) )/100 );
 valorS3 = 1/numOneP * sum( vectorS3(1:numOneP) );
 
 fprintf('Valor s3 de la imagen en cuestion: %.2f \n',valorS3);
-
-

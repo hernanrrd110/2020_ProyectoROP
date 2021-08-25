@@ -18,7 +18,7 @@ maskRGB = imRGB;
 % Enmascarar demas valores no clasificados
 maskRGB(repmat(imMascBin,[1 1 3])) = 0;
 imMascBin = double(imMascBin);
-
+%%
 figure('Name','Imagen original y mascaras')
 subplot 131; imshow(imRGB); title('Mascara original');
 subplot 132; imshow(imMascBin); title('Mascara binaria');
@@ -27,20 +27,17 @@ subplot 133; imshow(maskRGB); title('Mascara no binaria');
 % Linea para poder medir las circunferencias a marcar
 d = imdistline;
 
-%% Etapa de deconvolucion
-figure('Name','Imagen con filtro de gris')
-imshow(imMascBin);
+%%  === Filtrado y deteccion de la circunferencia
+% --- Etapa de deconvolucion
 % Funcion de dispersion de puntos modelado mediante una funcion gauussiana
 % PSF por siglas en ingles
 PSF = fspecial('gaussian',7,7);
 iter = 5; % iteraciones del filtrado
 % Deconvolucion  Lucy-Richardson
 imLuc = deconvlucy(imMascBin,PSF,iter);
-imshow(imLuc);
 
-%% === Filtrado y deteccion de la circunferencia
 % Filtrado pasaalto para acentuar bordes canny o sobel
-umbral = 0.7; %valor original 0.06
+umbral = 0.2; %valor original 0.06
 imBordes = edge(imLuc,'sobel',umbral);
 
 % Intervalo de radio del circulo a detectar
@@ -48,7 +45,10 @@ radio1 = 200;
 radio2 = 700;
 warning('off');
 [posCent, radio] = imfindcircles(imBordes,[radio1 radio2],...
-    'Sensitivity',0.97,'Method','twostage')
+    'Sensitivity',0.98,'Method','twostage')
+% fprintf('Posicion de los centros de los circulos encontrados:  %.2f %.2f\n',...
+%     posCent(1),posCent(2));
+
 figure('Name','Imagen filtrada enmarcada')
 subplot 121; imshow(imBordes);
 viscircles(posCent,radio);
