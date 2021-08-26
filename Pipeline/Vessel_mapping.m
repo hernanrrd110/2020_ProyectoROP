@@ -48,8 +48,8 @@ imshow(filtImageFinal); title('Escala Grises filtrada LoG');
 %   This example applies a single Gabor filter to an input image and obtains
 %   the magnitude and phase response.
 
-wavelength = 2;
-orientation = 90;
+wavelength = 15;
+orientation = 30;
 [mag,phase] = imgaborfilt(filtImageFinal,wavelength,orientation);
 figure();
 subplot(1,3,1); imshow(imGray); title('Original Image');
