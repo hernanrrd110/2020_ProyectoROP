@@ -11,49 +11,67 @@ addpath('./Imagenes');
 [imRGB,imGray] = cargarimagen('DR1.jpg');
 [M,N,t] = size(imRGB);
 
-%% ------ Creacion del filtro
-% parametros del filtro
-filterSize = 5; % El por defecto es 5
-sigma = 0.31:0.1:0.51; % valores de sigma para hacer diferentes filtros
+%%  ========= Filtrado LoG
+% Parametros del filtro
+filterSize = 75; % Por defecto 5
+sigma = 0.11:0.05:0.51; % valores de sigma para hacer diferentes filtros
 
+% Declaracion de variables
 hLoG = zeros(filterSize,filterSize, length(sigma));
-filtImage = zeros(M,N,length(sigma));
+imArrayLoGfilt = zeros(M,N,length(sigma));
 
 for i=1:length(sigma)
     % Creacion de kernel de Laplacian of Gaussian filter
     hLoG(:,:,i) = fspecial('log',filterSize,sigma(i));
     % Filtrado de la imagen 
-    filtImage(:,:,i) = imfilter(imGray,hLoG(:,:,i));
+    imArrayLoGfilt(:,:,i) = imfilter(imGray,hLoG(:,:,i),'symmetric', 'conv');
 end
 
-filtImageFinal = zeros(M,N);
+imLoGMax = zeros(M,N);
 % Se selecciona la respuesta maxima de cada pixel individual para todas 
 % las iteraciones 
-for i=1:M
-    for j=1:N
-        filtImageFinal(i,j) = max(filtImage(i,j,:));
+for iFilas=1:M
+    for jColum=1:N
+        % Maxima respuesta del pixel
+        imLoGMax(iFilas,jColum) = max(imArrayLoGfilt(iFilas,jColum,:));
     end
 end
 
-%% ------ Graficacion
-f = figure('Name', 'Imagen Original y filtrada');
-subplot 121;
-imshow(imGray); title('Imagen Original en Grises');
-subplot 122;
+% Normalizacion a valores de intensidad entre 0 y 1
+valorMax = max(imLoGMax(:));
+valorMin = min(imLoGMax(:));
+imLoGMax = (imLoGMax-valorMin)./(valorMax-valorMin);
 
-% imshow(filtImage(:,:,1)); title('Escala Grises filtrada LoG');
-imshow(filtImageFinal); title('Escala Grises filtrada LoG');
+% ------ Graficacion
+f = figure('Name', 'Filtrado LoG con respuesta maxima');
+subplot 121; imshow(imGray); title('Imagen Original en Grises');
+subplot 122; imshow(imLoGMax); title('Escala Grises filtrada LoG');
 
-%% Gabor wavelet
-%   This example applies a single Gabor filter to an input image and obtains
-%   the magnitude and phase response.
+%% ===== Filtrado Gabor Wavelet
+%   Aplicacion de filtros sucesivos de Gabor Wavelet con respuesta en
+%   magnitud y en fase
 
-wavelength = 15;
-orientation = 30;
-[mag,phase] = imgaborfilt(filtImageFinal,wavelength,orientation);
-figure();
-subplot(1,3,1); imshow(imGray); title('Original Image');
-subplot(1,3,2); imshow(mag,[]); title('Gabor magnitude');
-subplot(1,3,3); imshow(phase,[]); title('Gabor phase');
+waveLgth = [15 20]; % vector de longitudes de onda
+orient = 0:10:170; % Vector de Orientaciones 
 
+% Arreglo de objetos gabor para el filtrado
+gabor_array = gabor(waveLgth,orient); 
 
+[magResp,phaseResp] = imgaborfilt(imLoGMax,gabor_array);
+imGaborMax = zeros(M,N);
+% Se selecciona la respuesta maxima de cada pixel individual para todas 
+% las iteraciones 
+for iFilas=1:M
+    for jColum=1:N
+        imGaborMax(iFilas,jColum) = max(magResp(iFilas,jColum,:));
+    end
+end
+
+% Normalizacion a valores de intensidad entre 0 y 1
+valorMax = max(imGaborMax(:));
+valorMin = min(imGaborMax(:));
+imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
+
+figure('Name','Filtrado Gabor con respuesta maxima');
+subplot 121; imshow(imGray); title('Imagen Original');
+subplot 122; imshow(imGaborMax); title('Respuesta en Magnitud Gabor');
