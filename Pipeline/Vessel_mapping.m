@@ -55,9 +55,9 @@ waveLgth = [15 20]; % vector de longitudes de onda
 orient = 0:10:170; % Vector de Orientaciones 
 
 % Arreglo de objetos gabor para el filtrado
-gabor_array = gabor(waveLgth,orient); 
+gaborArray = gabor(waveLgth,orient); 
 
-[magResp,phaseResp] = imgaborfilt(imLoGMax,gabor_array);
+[magResp,phaseResp] = imgaborfilt(imLoGMax,gaborArray);
 imGaborMax = zeros(M,N);
 % Se selecciona la respuesta maxima de cada pixel individual para todas 
 % las iteraciones 
@@ -72,6 +72,7 @@ valorMax = max(imGaborMax(:));
 valorMin = min(imGaborMax(:));
 imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
 
-figure('Name','Filtrado Gabor con respuesta maxima');
+% ------ Graficacion
+f = figure('Name','Filtrado Gabor con respuesta maxima');
 subplot 121; imshow(imGray); title('Imagen Original');
 subplot 122; imshow(imGaborMax); title('Respuesta en Magnitud Gabor');
