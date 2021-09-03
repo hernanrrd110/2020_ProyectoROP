@@ -6,6 +6,7 @@ addpath('./Imagenes');
 % Lectura de imagen en valores RGB
 [imRGB] = cargarimagen();
 imHSV = rgb2hsv(imRGB); 
+[M,N,t] = size(imRGB);
 
 % Mascara binaria para deteccion de lupa
 [imMascBin] = crearmask(imHSV);
@@ -13,6 +14,7 @@ imMascBin = double(imMascBin);
 
 figure()
 subplot 121; imshow(imRGB); title('Imagen original');
+imdistline;
 
 %% Etapa de deconvolucion
 % Funcion de dispersion de puntos modelado mediante una funcion gauussiana
@@ -24,15 +26,15 @@ imLuc = deconvlucy(imMascBin,PSF,iter);
 
 %% === Filtrado y deteccion de la circunferencia
 % Filtrado pasaalto para acentuar bordes canny o sobel
-umbral = 0.7; %valor original 0.06
+umbral = 0.2; % valor original 0.06
 imBordes = edge(imLuc,'sobel',umbral);
 
 % Intervalo de radio del circulo a detectar
-radio1 = 200;
-radio2 = 700;
+rangoRadio1 = round(M/3)
+rangoRadio2 = round(M/2.2)
 warning('off');
-[posCent, radio] = imfindcircles(imBordes,[radio1 radio2],...
-    'Sensitivity',0.97,'Method','twostage')
+[posCent, radio] = imfindcircles(imBordes,[rangoRadio1 rangoRadio2],...
+    'Sensitivity',0.98,'Method','twostage')
 
 %% Anular valores de la imagen fuera de la circunferencia detectada
 % Imagen original enmascarada
@@ -50,9 +52,4 @@ for iFilas = 1:size(imRGB,1)
 end
 
 subplot 122; imshow(imCortada); title('Mascara cortada');
-
-
-
-
-
 

@@ -9,6 +9,7 @@ addpath('./Imagenes');
 % Lectura de imagen en valores RGB
 [imRGB] = cargarimagen();
 imHSV = rgb2hsv(imRGB); 
+[M,N,t] = size(imRGB);
 
 % Mascara binaria para deteccion de lupa
 [imMascBin] = crearmask(imHSV);
@@ -41,8 +42,8 @@ umbral = 0.2; %valor original 0.06
 imBordes = edge(imLuc,'sobel',umbral);
 
 % Intervalo de radio del circulo a detectar
-radio1 = 200;
-radio2 = 700;
+radio1 = round(M/3);
+radio2 = round(M/2.2);
 warning('off');
 [posCent, radio] = imfindcircles(imBordes,[radio1 radio2],...
     'Sensitivity',0.98,'Method','twostage')

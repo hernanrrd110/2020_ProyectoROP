@@ -24,7 +24,8 @@ for i=1:length(sigma)
     % Creacion de kernel de Laplacian of Gaussian filter
     hLoG(:,:,i) = fspecial('log',filterSize,sigma(i));
     % Filtrado de la imagen 
-    imArrayLoGfilt(:,:,i) = imfilter(imGray,hLoG(:,:,i),'symmetric', 'conv');
+    imArrayLoGfilt(:,:,i) = imfilter(imGray,hLoG(:,:,i),...
+        'symmetric', 'conv');
 end
 
 imLoGMax = zeros(M,N);
