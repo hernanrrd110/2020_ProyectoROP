@@ -1,6 +1,7 @@
 %% Prueba de video
 % Prueba para leer video y extraer frames
 
+
 %% ====== Carga de video
 % Se carga los cuadros obtenidos del video y se extrae informacion
 % adicional
@@ -23,6 +24,7 @@ vidFrame = struct('cdata',zeros(vidObj.Height,vidObj.Width,3,'uint8'),...
 iFrame = 1;
 jFrame = 1;
 scaleFactor = 0.8;
+
 while hasFrame(vidObj)
     frame = readFrame(vidObj);
     if (mod(iFrame,2)~= 0) % Solo se obtienen los frames impares

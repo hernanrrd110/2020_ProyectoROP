@@ -10,7 +10,7 @@ addpath('./Imagenes');
 warning('off');
 TAMANIO_UINT8 = 'uint8';
 TAMANIO_UINT16 = 'uint16';
-fprintf(' ======== Extraccion de Frames de video ========\n')
+fprintf(' |======== Extraccion de Frames de video ========|\n')
 % Declaracion del objeto para manejar el video
 vidObj = VideoReader('ID6_Video_ROP_Escalado.mp4');
 % Num de frames del video
@@ -22,7 +22,7 @@ fprintf('%s\n', folderName);
 %% Extraccion de frames
 % Especificar los frames de inicio y fin de extraccion
 frameIni = 100;
-frameFin = 300;
+frameFin = 150;
 vidObj.CurrentTime = frameIni/vidObj.FrameRate; % Tiempo inicial
 
 % Recorrido del video para extraccion de frames
@@ -33,7 +33,10 @@ resoAjust = [floor(vidObj.Height*factorEscala) ...
     floor(vidObj.Width*factorEscala) ];
 vidFrame = zeros(resoAjust(1),resoAjust(2),3,...
     frameFin-frameIni,TAMANIO_UINT8);
-endTime = frameFin/vidObj.FrameRate; %tiempo de finalizacion
+endTime = frameFin/vidObj.FrameRate; % Tiempo de finalizacion
+
+dispprogress()
+barraWait = waitbar(0,'Espere a que la extracción termine');
 while vidObj.CurrentTime <= endTime
     frame = readFrame(vidObj);
     if (mod(iFrame,2)~= 0) % Solo se obtienen los frames impares
@@ -45,9 +48,13 @@ while vidObj.CurrentTime <= endTime
         jFrame = jFrame + 1;
     end
     iFrame = iFrame + 1;
+    waitbar(iFrame-frameIni/frameFin-frameIni); 
+    dispprogress(iFrame-frameIni, frameFin-frameIni);
+    
 end
-fprintf(' ========= Proceso de extracion finalizada =========\n');
+close(barraWait);
 
+fprintf(' |========= Proceso de extracion finalizada =========|\n');
 % Cantidad de espacio requerido para almacenar el video
 % info = whos('bytes', 'vidFrame');
 % fprintf('Espacio en memoria del video: %.3f GB\n',info.bytes/1e9);

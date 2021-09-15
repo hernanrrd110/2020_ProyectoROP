@@ -14,7 +14,7 @@ imMascBin = double(imMascBin);
 
 figure()
 subplot 121; imshow(imRGB); title('Imagen original');
-imdistline;
+% imdistline;
 
 %% Etapa de deconvolucion
 % Funcion de dispersion de puntos modelado mediante una funcion gauussiana

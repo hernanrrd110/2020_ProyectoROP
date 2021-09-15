@@ -8,7 +8,7 @@ addpath('./Funciones');
 addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
-[imRGB,imGray] = cargarimagen('DR1.jpg');
+[imRGB,imGray] = cargarimagen();
 [M,N,t] = size(imRGB);
 
 %%  ========= Filtrado LoG

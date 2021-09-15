@@ -12,7 +12,6 @@ p_done = p / p_max * 100;
 p_done = round(p_done / 10) * 10;
 
 %[p_done p_last]
-
 if (p_done == p_last)
   return;
 end
@@ -46,8 +45,7 @@ switch (p_done)
   case 90
     fprintf(1, '%s', '[||||||||| ] 90% ');
   case 100
-    fprintf(1, '%s', '[||||||||||] 100% ');
-    fprintf('\n');
+    fprintf(1, '%s\n', '[||||||||||] 100% ');
 end
 drawnow;
 
