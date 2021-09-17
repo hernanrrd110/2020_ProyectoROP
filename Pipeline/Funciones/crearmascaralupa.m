@@ -1,5 +1,6 @@
-function [BW] = crearmask(imHSV)
-%crearmask  Threshold RGB image using auto-generated code from colorThresholder app.
+function [BW] = crearmascaralupa(imHSV)
+%  crearmask  Threshold RGB image using auto-generated code 
+%  from colorThresholder app.
 %  [BW,MASKEDRGBIMAGE] = createMask(RGB) thresholds image RGB using
 %  auto-generated code from the colorThresholder app. The colorspace and
 %  range for each channel of the colorspace were set within the app. The
@@ -26,10 +27,5 @@ BW = ( (imHSV(:,:,1) >= channel1Min) | (imHSV(:,:,1) <= channel1Max) ) & ...
     (imHSV(:,:,2) >= channel2Min ) & (imHSV(:,:,2) <= channel2Max) & ...
     (imHSV(:,:,3) >= channel3Min ) & (imHSV(:,:,3) <= channel3Max);
 BW = ~BW;
-% % Inicializacion mascara no binaria
-% maskedRGBImage = imHSV;
-% 
-% % Enmascarar valores del fondo que no correspondan con los valores
-% maskedRGBImage(repmat(~BW,[1 1 3])) = 0;
 
 end

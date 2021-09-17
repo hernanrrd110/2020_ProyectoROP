@@ -2,16 +2,15 @@
 clc; clear all; close all;
 addpath('./Funciones');
 addpath('./Imagenes');
-
+warning('off');
 % Lectura de imagen en valores RGB
 [imRGB] = cargarimagen();
 imHSV = rgb2hsv(imRGB); 
 [M,N,t] = size(imRGB);
 
 % Mascara binaria para deteccion de lupa
-[imMascBin] = crearmask(imHSV);
+[imMascBin] = crearmascaralupa(imHSV);
 imMascBin = double(imMascBin);
-
 figure()
 subplot 121; imshow(imRGB); title('Imagen original');
 % imdistline;
@@ -32,7 +31,6 @@ imBordes = edge(imLuc,'sobel',umbral);
 % Intervalo de radio del circulo a detectar
 rangoRadio1 = round(M/3)
 rangoRadio2 = round(M/2.2)
-warning('off');
 [posCent, radio] = imfindcircles(imBordes,[rangoRadio1 rangoRadio2],...
     'Sensitivity',0.98,'Method','twostage')
 

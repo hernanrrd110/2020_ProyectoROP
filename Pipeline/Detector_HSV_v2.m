@@ -40,7 +40,7 @@ fprintf('Valor(V): %.4f\n',hsvVal(3))
 % respectivamente
 tol = [0.1 0.1 0.1];
 fprintf('Tolerancia elegida: %.2f\n',tol(1));
-[mascaraHSV, countPix] = enmascarhsv(imHSV,tol,hsvVal);
+[mascaraHSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal);
 
 % Imagen Original contra imagen detectada
 f = figure('Name', 'imagen RGB y HSV originales');
@@ -49,7 +49,7 @@ subplot(1,2,1),imshow(imRGB); title('Imagen Original');
 subplot(1,2,2),imshow(mascaraHSV,[]); title('Areas detectadas');
 
 fprintf('\n --- Puntuacion de frame en Clasificacion HSV: ')
-fprintf('%.2f%% \n', (countPix/(M*N)*100));
+fprintf('%.2f%% \n', (puntajeHSV*100));
 
 %% Grafica de Espacio HSV de la imagen para verificacion
 

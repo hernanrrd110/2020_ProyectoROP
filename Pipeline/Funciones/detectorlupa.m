@@ -4,8 +4,9 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
     % Conversion valores RGB a HSV
     imHSV = rgb2hsv(imRGB);
     % Creacion mascara binaria
-    [imMascBin] = crearmask(imHSV);
-    imMascBin = double(imMascBin);
+    [imFilt] = crearmascaralupa(imHSV);
+    imFilt = double(imFilt);
+    [M,N,t] = size(imRGB);
     
     % Etapa de deconvolucion
     % Funcion Dispersion de Puntos modelado mediante Gaussiana
@@ -13,19 +14,18 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
     PSF = fspecial('gaussian',7,7);
     iter = 5; % iteraciones del filtrado
     % Deconvolucion  Lucy-Richardson
-    imLuc = deconvlucy(imMascBin,PSF,iter);
+    imFilt = deconvlucy(imFilt,PSF,iter);
 
     % === Filtrado y deteccion de la circunferencia
     % Filtrado pasaalto para acentuar bordes canny o sobel
-    umbral = 0.7; %valor original 0.06
-    imBordes = edge(imLuc,'sobel',umbral);
+    umbral = 0.2; %valor original 0.06
+    imFilt = edge(imFilt,'sobel',umbral);
 
     % Intervalo de radio del circulo a detectar
-    radio1 = 200;
-    radio2 = 700;
-    warning('off');
-    [posCent, radio] = imfindcircles(imBordes,[radio1 radio2],...
-        'Sensitivity',0.97,'Method','twostage');
+    rangoRadio1 = round(M/3);
+    rangoRadio2 = round(M/2.2);
+    [posCent, radio] = imfindcircles(imFilt,[rangoRadio1 rangoRadio2],...
+        'Sensitivity',0.98,'Method','twostage');
 
     % Anular valores de la imagen fuera de la circunferencia detectada
     % Imagen original enmascarada
@@ -44,6 +44,6 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
             end
         end
     end
-
+    
 end
 

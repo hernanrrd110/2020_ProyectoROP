@@ -12,7 +12,7 @@ imHSV = rgb2hsv(imRGB);
 [M,N,t] = size(imRGB);
 
 % Mascara binaria para deteccion de lupa
-[imMascBin] = crearmask(imHSV);
+[imMascBin] = crearmascaralupa(imHSV);
 % Inicializacion de la mascara segun valores originales de la imagen
 maskRGB = imRGB;
 
