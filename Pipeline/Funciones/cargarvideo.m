@@ -8,21 +8,28 @@ function [vidObj,framesNo] = ...
             'All Video Files';'*.*','All Files'},...
             'Seleccione el video a extraer');
         fprintf('Video Seleccionado:\n ')
-        disp(filename);
-        fprintf('Path:\n ')
-        pathVideo = strcat(path,filename);
-        disp(pathVideo);
+        if (filename ~= 0)
+            disp(filename);
+            fprintf('Path:\n ')
+            pathVideo = strcat(path,filename);
+            disp(pathVideo);
+        else 
+            fprintf('No se seleccionó video \n ')
+            return;
+        end
+        
         
     elseif (nargin == 1)
         [~,name,ext] = fileparts(pathVideo);
+        filename = sprintf('%s%s',name,ext);
         fprintf('Video Seleccionado: \n ');
-        fprintf('%s',name); fprintf('.%s\n',ext);
+        fprintf('%s\n',filename);
         fprintf('Path:\n ');
-        which(file);
+        which(filename);
     end
     % Declaracion del objeto para manejar el video
     vidObj = VideoReader(pathVideo);
     framesNo = round(vidObj.Duration*vidObj.FrameRate);
-    
+
 end
 

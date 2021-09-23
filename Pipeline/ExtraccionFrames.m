@@ -13,22 +13,19 @@ TAMANIO_UINT8 = 'uint8';
 TAMANIO_UINT16 = 'uint16';
 
 % Declaracion del objeto para manejar el video
-vidObj = VideoReader('ID6_Video_ROP_Escalado.mp4');
-% Num de frames del video
-framesNo = round(vidObj.Duration*vidObj.FrameRate);
+[vidObj, framesNo] = cargarvideo();
 folderName = uigetdir(); %Para seleccionar la carpeta de destino
 fprintf('Direccion de frames seleccionada\n');
 fprintf('%s\n', folderName);
 
 %% Extraccion de frames
 % Especificar los frames de inicio y fin de extraccion
-frameIni = 100;
-frameFin = 150;
+frameIni = 1;
+frameFin = framesNo;
 vidObj.CurrentTime = frameIni/vidObj.FrameRate; % Tiempo inicial
 
 % Recorrido del video para extraccion de frames
 iFrame = frameIni;
-jFrame = 1;
 factorEscala = 1; %factor de escala para el video
 resoAjust = [floor(vidObj.Height*factorEscala) ...
     floor(vidObj.Width*factorEscala) ];
@@ -39,14 +36,13 @@ endTime = frameFin/vidObj.FrameRate; % Tiempo de finalizacion
 dispprogress()
 barraWait = waitbar(0,'Espere a que la extracción termine');
 while vidObj.CurrentTime <= endTime
-    frame = readFrame(vidObj);
+    vidFrame = readFrame(vidObj);
     if (mod(iFrame,2)~= 0) % Solo se obtienen los frames impares
         % Se rescala la imagen segun el factor de escala
-        vidFrame = imresize(frame,factorEscala);
+        vidFrame = imresize(vidFrame,factorEscala);
         pathCompleto = fullfile(folderName,...
             sprintf('Image_%i.jpg',iFrame));
         imwrite(vidFrame,pathCompleto);
-        jFrame = jFrame + 1;
     end
     iFrame = iFrame + 1;
     waitbar(iFrame-frameIni/frameFin-frameIni); 

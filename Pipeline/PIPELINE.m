@@ -5,6 +5,7 @@
 % Clasificacion frecuencial
 % Deteccion de lupa
 % Vessel mapping
+% =========== 
 
 %% Carga imagenes
 clear all; close all; clc;
@@ -18,15 +19,15 @@ imRGB = cargarimagen();
 % -- DECLARACION MACROS
 SIN_ENTRADA_MOUSE = 0;
 ENTRADA_MOUSE = 1;
-
+% ----
 [mascaraHSV,puntajeHSV] = clasificadorhsv(imRGB,SIN_ENTRADA_MOUSE);
 figure(); imshow(mascaraHSV);
 fprintf('Puntaje frecuencial antes de mascara lupa: %.2f\n',puntajeHSV);
-
+% ----
 %% ====== Detector lupa
-warning('off');
 [imCort, posCent, radio] = detectorlupa(imRGB);
 imshow(imCort);
+warning('off');
 
 %% ====== Clasificacion HSV
 % -- DECLARACION MACROS
