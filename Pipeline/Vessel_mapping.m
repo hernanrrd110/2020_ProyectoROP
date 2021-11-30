@@ -13,7 +13,7 @@ addpath('./Imagenes');
 
 %%  ========= Filtrado LoG
 % Parametros del filtro
-filterSize = 75; % Por defecto 5
+filterSize = 75; % Por defecto 75
 sigma = 0.11:0.05:0.51; % valores de sigma para hacer diferentes filtros
 
 % Declaracion de variables
@@ -52,8 +52,8 @@ subplot 122; imshow(imLoGMax); title('Escala Grises filtrada LoG');
 %   Aplicacion de filtros sucesivos de Gabor Wavelet con respuesta en
 %   magnitud y en fase
 
-waveLgth = [15 20]; % vector de longitudes de onda
-orient = 0:10:170; % Vector de Orientaciones 
+waveLgth = [10 15 20]; % vector de longitudes de onda
+orient = 0:5:170; % Vector de Orientaciones 
 
 % Arreglo de objetos gabor para el filtrado
 gaborArray = gabor(waveLgth,orient); 

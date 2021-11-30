@@ -6,7 +6,7 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
     % Creacion mascara binaria
     [imFilt] = crearmascaralupa(imHSV);
     imFilt = double(imFilt);
-    [M,N,t] = size(imRGB);
+    [M,~,~] = size(imRGB);
     
     % Etapa de deconvolucion
     % Funcion Dispersion de Puntos modelado mediante Gaussiana
@@ -24,6 +24,7 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
     % Intervalo de radio del circulo a detectar
     rangoRadio1 = round(M/3);
     rangoRadio2 = round(M/2.2);
+    
     [posCent, radio] = imfindcircles(imFilt,[rangoRadio1 rangoRadio2],...
         'Sensitivity',0.98,'Method','twostage');
 
@@ -31,19 +32,23 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
     % Imagen original enmascarada
     imCort = imRGB;
     
-    % Nos quedamos con la primer circunferencia detectada
-    posCent = posCent(1,:);
-    radio = radio(1,:);
+    % Si se encuentra circulo
+    if(~isempty(posCent))
+        % Nos quedamos con la primer circunferencia detectada
+        posCent = posCent(1,:);
+        radio = radio(1,:);
 
-    for iFilas = 1:size(imRGB,1)
-        for jColum = 1:size(imRGB,2)
-            % Ecuacion de circunferencia
-            if((iFilas-posCent(2))^2+...
-                    (jColum-posCent(1))^2 > (radio*0.95)^2)
-                imCort(iFilas,jColum,:) = 0;
+        for iFilas = 1:size(imRGB,1)
+            for jColum = 1:size(imRGB,2)
+                % Ecuacion de circunferencia
+                if((iFilas-posCent(2))^2+...
+                        (jColum-posCent(1))^2 > (radio*0.95)^2)
+                    imCort(iFilas,jColum,:) = 0;
+                end
             end
         end
+    else
+        imCort = [];
     end
-    
 end
 

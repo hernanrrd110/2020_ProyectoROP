@@ -1,7 +1,7 @@
 %% Prueba de video
 % Prueba para leer video y extraer frames
 
-%% ====== Carga de video y seleccion de 
+%% ====== Carga de video y seleccion de frames
 % Se carga los cuadros obtenidos del video y se extrae informacion
 % adicional
 clear all; close all; clc;
@@ -48,6 +48,7 @@ while vidObj.CurrentTime <= endTime
     waitbar(iFrame-frameIni/frameFin-frameIni); 
     dispprogress(iFrame-frameIni, frameFin-frameIni);
 end
+
 close(barraWait);
 
 fprintf(' |========= Proceso de extracion finalizada =========|\n');

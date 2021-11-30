@@ -1,7 +1,5 @@
 %% Prueba de video
 % Prueba para leer video y extraer frames
-
-
 %% ====== Carga de video
 % Se carga los cuadros obtenidos del video y se extrae informacion
 % adicional

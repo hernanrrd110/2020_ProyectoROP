@@ -18,14 +18,17 @@ function [vidObj,framesNo] = ...
             return;
         end
         
-        
     elseif (nargin == 1)
-        [~,name,ext] = fileparts(pathVideo);
+        [path,name,ext] = fileparts(pathVideo);
         filename = sprintf('%s%s',name,ext);
-        fprintf('Video Seleccionado: \n ');
+        fprintf('-- Video Seleccionado: \n ');
         fprintf('%s\n',filename);
         fprintf('Path:\n ');
-        which(filename);
+        if (size(path) == 0)
+            which(filename);
+        else
+            disp(path);
+        end
     end
     % Declaracion del objeto para manejar el video
     vidObj = VideoReader(pathVideo);

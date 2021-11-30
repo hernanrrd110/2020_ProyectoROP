@@ -8,7 +8,7 @@ function [imRGB,imGray] = cargarimagen(file)
 %   - file (opcional): nombre del archivo o ruta completa del archivo
 %   Retornos:
 %   - imRGB: imagen leida directamente del archivo (generalmente en RGB)
-%   - imGray (opcional): imagen convertida a escala de grises
+%   - imGray (opcional): imagen conve rtida a escala de grises
 % -------------------------------
     if (nargin == 0) % no se pasa el nombre del archivo por imagen
         [filename, path] = uigetfile ({'*.jpg;*.tif;*.png;*.gif',...
@@ -28,20 +28,27 @@ function [imRGB,imGray] = cargarimagen(file)
 
         % Se da la direccion del archivo a abrir
     else
+        [path,name,ext] = fileparts(file);
         fprintf('Archivo Seleccionado:\n ')
-        disp(file);
+        disp(strcat(name,ext));
         fprintf('Path:\n ')
-        which(file);
+        if(size(path) == 0)
+            which(strcat(name,ext))
+        else
+            disp(path);
+        end
         imRGB = im2double(imread(file));
-
     end
     
     % Argumento de salida opcional
     switch nargout
         case 2
             if( size(imRGB,3) == 3 )
+                % Convierte la imagen original RGB en escala de grises
                 imGray = im2double(rgb2gray(imRGB));
             else
+                % En el caso de que la imagen original este en escala de
+                % grises, las dos imagenes quedan iguales
                 imGray = imRGB;
             end
     end
