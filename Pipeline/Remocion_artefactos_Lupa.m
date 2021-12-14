@@ -13,14 +13,15 @@ addpath('./Imagenes');
 [imRGB]= cargarimagen(); % Funcion para obtener la imagen
 [M,N,t] = size(imRGB);
 
-% Para visualizar el canal verde
-canal_verde = zeros(size(imRGB));
-canal_verde(:,:,2) = imRGB(:,:,2);
+%% ======= Deteccion de LUPA
+[imCort, posCent, radio] = detectorlupa(imRGB);
+f = figure('Name', 'imagen orignal y LUPA');
+imshowpair(imRGB,imCort,'montage'); title('imagen orignal y LUPA');
 
 %%
 close all;
 % -- Filtrado de mediana a la imagen
-ventAlto = 25; ventAncho = 25;
+ventAlto = 50; ventAncho = 50;
 imMediana(:,:,1) = medfilt2(imRGB(:,:,1) ,[ventAlto ventAncho]);
 imMediana(:,:,2) = medfilt2(imRGB(:,:,2) ,[ventAlto ventAncho]);
 imMediana(:,:,3) = medfilt2(imRGB(:,:,3) ,[ventAlto ventAncho]);
