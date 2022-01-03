@@ -52,8 +52,8 @@ function [mascara_HSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal)
         
     else     
         % Define thresholds for channel 1 based on histogram settings
-        channel1Min = 0.967;
-        channel1Max = 0.152;
+        channel1Min = 0;
+        channel1Max = 0.160;
 
         % Define thresholds for channel 2 based on histogram settings
         channel2Min = 0.472;
@@ -65,7 +65,7 @@ function [mascara_HSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal)
 
         % Create mask based on chosen histogram thresholds
         sliderBW = ...
-            ((imHSV(:,:,1) >= channel1Min) | ...
+            ((imHSV(:,:,1) >= channel1Min) & ...
             (imHSV(:,:,1) <= channel1Max) ) & ...
             (imHSV(:,:,2) >= channel2Min ) & ...
             (imHSV(:,:,2) <= channel2Max) & ...

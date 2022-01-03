@@ -14,11 +14,11 @@ RAD = pi/180; % factor de conversion
 M = 128; N = 128; % tamanio de pixeles de la imagen
 
 % -- Parametros de senoidal
-Uo = -1/80; Vo = 1/80; % frecuencias espaciales de la senoidal compleja
-PHI = 0; % Desfase de la funciones senoidal
+uo = -1/80; vo = 1/80; % frecuencias espaciales de la senoidal compleja
+phi = 0; % Desfase de la funciones senoidal
 
 % -- Parametros de envolvente gaussiana
-K_GAUSS = 1; % Magnitud 
+K_GAUSS = 10; % Magnitud 
 A = 1/50; B = 1/40; % factor escala de X e Y
 THETA = 45*RAD; % angulo de rotacion
 Xo = floor(M/2); Yo = floor(N/2); % posicion del centro
@@ -27,7 +27,7 @@ Xo = floor(M/2); Yo = floor(N/2); % posicion del centro
 senoComplex = zeros(M,N);
 for i = 1:M
     for j = 1:N
-        senoComplex(i,j) = exp(1i*(2*pi*(Uo*i+Vo*j)+PHI));
+        senoComplex(i,j) = exp(1i*(2*pi*(uo*i+vo*j)+phi));
     end
 end
 
@@ -35,8 +35,8 @@ end
 envGauss = zeros(M,N);
 for i = 1:M
     for j = 1:N
-        xr = (i-Xo)*cos(THETA)+(j-Yo)*sin(THETA);
-        yr = -(i-Xo)*sin(THETA)+(j-Yo)*cos(THETA);
+        xr = (j-Xo)*cos(THETA)+(i-Yo)*sin(THETA);
+        yr = -(j-Xo)*sin(THETA)+(i-Yo)*cos(THETA);
         envGauss(i,j) = K_GAUSS * exp(-pi*((A*xr)^2+(B*yr)^2));
     end
 end
@@ -65,19 +65,19 @@ addpath('./Imagenes');
 [imRGB,imGray] = cargarimagen('DR1.jpg');
 [M,N,t] = size(imRGB);
 % -- Parametros de senoidal
-Uo = 0.05; Vo = 0.05; % frecuencias espaciales de la senoidal compleja
-PHI = 30; % Desfase de la funciones senoidal
+uo = -1/5; vo =1/5 ; % frecuencias espaciales de la senoidal compleja
+phi = 30; % Desfase de la funciones senoidal
 
 % -- Parametros de envolvente gaussiana
-K_GAUSS = 1; % Magnitud 
+K_GAUSS = 10; % Magnitud
 A = 10; B = 10; % factor escala de X e Y
 THETA = 45; % angulo de rotacion en grados
 
-hSize = [5 5];
-[imFilt] = filtradogabor(imGray,Uo,Vo,PHI,...
+hSize = [21 21];
+[imFilt] = filtradogabor(imGray,uo,vo,phi,...
     K_GAUSS,A,B,THETA,hSize);
 
 subplot 121;
-imshow(real(imFilt)); title('Parte Real filtrado');
+imshow(imGray,[]); title('Imagen Original en grises');
 subplot 122;
-imshow(imag(imFilt)); title('Parte Real filtrado');
+imshow(imFilt,[]); title('Imagen Filtrada');

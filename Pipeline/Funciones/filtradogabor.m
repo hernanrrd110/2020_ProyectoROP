@@ -1,7 +1,7 @@
 function [im_filtrada] = filtradogabor(imagen,uo,vo,phi,...
-    K,a,b,theta,h_size)
+    K,a,b,theta,hSize)
 %FILTRADO_GABOR Crea un kernel de gabor wavelet y convoluciona con imagen
-%   Genera un kernel de gabor wavelet del tamanio de h_size. El kernel se 
+%   Genera un kernel de gabor wavelet del tamanio de hsize. El kernel se 
 % obtiene de la multiplicacion de una funcion senoidal compleja con una 
 % envolvente gaussiana.
 % Parametros:
@@ -21,27 +21,27 @@ rad = pi/180; % factor de conversion
 % -- Parametros de envolvente gaussiana
 theta = theta*rad; % angulo de rotacion en radianes
 phi = phi * rad; % angulo de desfase en radianes
-xo = floor(h_size(1)/2); yo = floor(h_size(2)/2); % posicion del centro
+xo = floor(hSize(2)/2); yo = floor(hSize(1)/2); % posicion del centro
 
 % Seno complejo
-seno_comp = zeros(h_size);
-for i = 1:h_size(1)
-    for j = 1:h_size(2)
-        seno_comp(i,j) = exp(1i*(2*pi*(uo*i+vo*j)+phi));
+seno_comp = zeros(hSize);
+for iFilas = 1:hSize(1)
+    for jColum = 1:hSize(2)
+        seno_comp(iFilas,jColum) = exp(1i*(2*pi*(uo*iFilas+vo*jColum)+phi));
     end
 end
 
 % Envolvente gaussiana
-wr = zeros(h_size);
-for i = 1:h_size(1)
-    for j = 1:h_size(2)
-        xr = (i-xo)*cos(theta)+(j-yo)*sin(theta);
-        yr = -(i-xo)*sin(theta)+(j-yo)*cos(theta);
-        wr(i,j) = K * exp(-pi*((a*xr)^2+(b*yr)^2));
+wr = zeros(hSize);
+for iFilas = 1:hSize(1)
+    for jColum = 1:hSize(2)
+        xr = (jColum-xo)*cos(theta)+(iFilas-yo)*sin(theta);
+        yr = -(jColum-xo)*sin(theta)+(iFilas-yo)*cos(theta);
+        wr(iFilas,jColum) = K * exp(-pi*((a*xr)^2+(b*yr)^2));
     end
 end
 
-filtro_gabor = seno_comp.*wr;
+filtro_gabor = real(seno_comp.*wr);
 im_filtrada = imfilter(imagen, filtro_gabor);
 
 end
