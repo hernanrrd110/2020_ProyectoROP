@@ -16,7 +16,6 @@ addpath('./Imagenes');
 % MACROS
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
-
 % Declaracion del objeto para manejar el video
 [vidObj, framesNo] = cargarvideo('ID_68_VIDEO.mp4');
 % --- Interfaz de usuario para elegir la carpeta de destino 
@@ -28,9 +27,13 @@ fprintf('Direccion de frames seleccionada\n');
 fprintf('%s\n', folderName);
 
 frameIni = 1;
-frameFin = 300;
+frameFin = 200;
 factorEscala = [1080 1920];
 
+pathMetadatos = fullfile(folderName,'metadatos.mat');
+%% ======================= Extraccion de frames =========================
+warning('off');
+barraWait = waitbar(0,'Deteccion Lupa');
 % Si el video tiene 60 fps, submuestramos a 30 fps 
 if (vidObj.FrameRate == 60)
     select = SUBMUESTREO;
@@ -39,71 +42,85 @@ else
 end
 extraerframes(vidObj,...
     frameIni,frameFin,folderName,factorEscala,select)
-
-pathMetadatos = fullfile(folderName,'metadatos.mat');
 load(pathMetadatos);
 
 % Se extrae frameSelected de metadatos, un array que indica los frames que
 % se seleccionaron para el procesamiento
 
-%% ====== Detector lupa
+%% =========================== Detector lupa ============================
 warning('off');
 barraWait = waitbar(0,'Deteccion Lupa');
 
 % Seleccion de frames correspondientes a la segunda etapa
 % Si no detecta lupa, no se toma en cuenta el frame
 frameSelected(:,2) = frameSelected(:,1);
+posCent = zeros(framesNo, 2); % Vector para la posicion del centro
+radio = zeros(framesNo,1); % Vector para el radio de la circunferencia
 
+tic;
 for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,1) == 1)
-        % Cargar imagen
+        % Creando la ruta del archivo de imagen
         pathImagen = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
+        % Verificamos que el archivo existe, en cuyo caso se emite la
+        % operacion
+        pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
+        % Cargar imagen
         imRGB = im2double(imread(pathImagen));
-        
-        % Extramos la lupa 
-        [imCort, ~, ~] = detectorlupa(imRGB);
+        % Extramos la lupa
+        [imCort, aux1, aux2] = detectorlupa(imRGB);
         if(~isempty(imCort))
             % Guardamos la imagen
-            pathLupa = fullfile(folderName,...
-                sprintf('Lupa_%i.jpg',iFrame));
             imwrite(imCort,pathLupa);
+            posCent(iFrame,:) = aux1;
+            radio(iFrame) = aux2;
         else
             % Si no se detecta el cuadro, no se selecciona
             frameSelected(iFrame,2) = 0;
         end
+        
     end
-    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
+    waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
-close(barraWait);
+toc;
 
-%% ====== Clasificacion HSV
+disp(' ============== Deteccion de Lupa completo ==================')
+close(barraWait);
+save(pathMetadatos,'frameSelected','posCent','radio','-append');
+
+%% ======================== Clasificacion HSV ===========================
+load(pathMetadatos);
 % -- DECLARACION MACROS
 SIN_ENTRADA_MOUSE = 0;
 ENTRADA_MOUSE = 1;
 
+% Declaracion para vector con puntajes HSV
 etapas.clasHSV = zeros(size(frameSelected(1)));
 
 barraWait = waitbar(0,'Clasificacion HSV');
 for iFrame = frameIni:frameFin
-    if(frameSelected(iFrame,2) == 1) % ======
+    if(frameSelected(iFrame,2) == 1) % Si el frame fue seleccionado
+        pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
         % Cargar imagen de la mascara de la lupa
-        pathImagen = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
-        imRGB = im2double(imread(pathImagen));
-        %Extreaemos las mascaras y el puntaje
+        imRGB = im2double(imread(pathLupa));
+        % Extreaemos las mascaras y el puntaje
         [mascaraHSV,etapas.clasHSV(iFrame)] = ...
             clasificadorhsv(imRGB,SIN_ENTRADA_MOUSE);
-        % Guardamos la imagen
         pathMascara = fullfile(folderName,...
             sprintf('MascaraHSV_%i.jpg',iFrame));
-        imwrite(mascaraHSV,pathMascara);
-        
+        if(~isfile(pathMascara))
+            % Guardamos la imagen
+            imwrite(mascaraHSV,pathMascara);
+        end
     end % ======
-    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
+    waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
-
+disp(' ============== Clasificacion HSV completa ==================')
 close(barraWait);
 
-%% ====== Clasificacion frecuencial
+save(pathMetadatos, 'etapas.clasHSV','-append');
+
+%% ===================== Clasificacion frecuencial =======================
 
 % ------- Struct para etapas de procesamiento
 % Energy of laplacian (Subbarao92a)
@@ -114,16 +131,14 @@ etapas.FrecLap.LAPM = zeros(size(frameSelected(1)));
 etapas.FrecLap.LAPD = zeros(size(frameSelected(1)));
 % Metodo gaussiano implementado como Estrada 2011
 etapas.FrecGauss = zeros(size(frameSelected(1)));
-% Metodo con cuadradas
-etapas.FrecCuadrada = zeros(size(frameSelected(1)));
-
 
 barraWait = waitbar(0,'Clasificación frecuencial');
 
 for iFrame = frameIni:frameFin
-    if(frameSelected(iFrame,2) == 1)
-        pathImagen = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
-        imRGB = imread(pathImagen);
+    % Si el frame esta seleccionado de la etapa anterior
+    if(frameSelected(iFrame,2) == 1) 
+        pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
+        imRGB = imread(pathLupa);
         imGray = im2double(rgb2gray(imRGB));
         % puntaje por LAPLACE
         [etapas.FrecLap.LAPE(iFrame)] = ... 
@@ -132,20 +147,63 @@ for iFrame = frameIni:frameFin
             fmeasure(imGray, 'LAPM');
         [etapas.FrecLap.LAPD(iFrame)] = ...
             fmeasure(imGray, 'LAPD');
-        
         % Puntaje por Gauss
         [etapas.FrecGauss(iFrame)] = ...
             clasificadorfrec(imGray, 'gaussiano');
-        % Puntaje por cuadrada
-        [etapas.FrecCuadrada(iFrame)] = ...
-            clasificadorfrec(imGray, 'cuadrada');
         % Cambio en la barra de progreso
         waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
-        
-    end
+    end 
 
 end
 
+disp(' ========== Clasificacion frecuencial completa ==============')
+close(barraWait);
+save(pathMetadatos, 'etapas.FrecLap','-append');
+
+%% ======================= Remocion artefactos ========================== 
+% En esta parte se eliminan las partes de la imagen que eran por demás
+% brillosas
+load(pathMetadatos);
+barraWait = waitbar(0,'Remocion de artefactos');
+for iFrame = frameIni:frameFin
+    pathSalida = fullfile(folderName,sprintf('ImagenModif_%i.jpg',iFrame)); 
+    if(frameSelected(iFrame,2) == 1)
+        % Lectura de imagen
+        pathImagen = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
+        imRGB = imread(pathImagen);
+        % Removemos los artefactos de la imagen
+        [imModif] = ...
+            removerartefactos(imRGB,posCent(iFrame,:), radio(iFrame));
+        % Guardamos la imagen
+        imwrite(imModif,pathSalida);    
+    end
+    % Cambio en la barra de progreso
+    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
+end
+
+disp(' ========== Remocion artefactos completa ==============')
+close(barraWait);
+
+%% ======================= Realce de Vasos ==========================
+load(pathMetadatos);
+barraWait = waitbar(0,'Realce de Vasos');
+for iFrame = frameIni:frameFin
+    pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
+    if(frameSelected(iFrame,2) == 1 && ~isfile(pathSalida))
+        % Lectura de imagen
+        pathImagen = fullfile(folderName,...
+            sprintf('ImagenModif_%i.jpg',iFrame));
+        imRGB = imread(pathImagen);
+        % Removemos los artefactos de la imagen 
+        [imModif] = resaltarvasos(imRGB);
+        % Guardamos la imagen
+        imwrite(imModif,pathSalida);    
+    end
+    % Cambio en la barra de progreso
+    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
+end
+
+disp(' =============  Realce de Vasos completado ===============')
 close(barraWait);
 
 %% Mostramos los valores frecuenciales en formato tabla
@@ -158,7 +216,6 @@ tablaFrecuencial = table(vectorFrames,...
     etapas.FrecLap.LAPD(frameIni:frameFin),...
     etapas.FrecGauss(frameIni:frameFin),...
     etapas.FrecCuadrada(frameIni:frameFin));
-    
 
 % Nombres de la columnas de la tabla
 tablaFrecuencial.Properties.VariableNames = ...

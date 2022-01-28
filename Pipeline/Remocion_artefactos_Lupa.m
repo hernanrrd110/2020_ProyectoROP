@@ -61,15 +61,16 @@ imCortCuadrado = imRGB(posY1:posY2,posX1:posX2,:);
 figure();
 imshow(imCortCuadrado);
 
-%% ======== Filtrado de madiana 
+%% ======== Filtrado de mediana 
 close all;
 % Se establece la altura y el ancho de la ventana de kernel de mediana
 ventAlto = 21; ventAncho = 21;
 imMediana = imCortCuadrado;
 
 % Filtrado de mediana iterativo 
-iter = 2;
-for iFilas = 1:iter
+tic;
+iter = 3;
+for i = 1:iter
     % Se filtra cada valor de RGB por separado
     imMediana(:,:,1) = medfilt2(imMediana(:,:,1) ,...
         [ventAlto ventAncho]);
@@ -78,7 +79,7 @@ for iFilas = 1:iter
     imMediana(:,:,3) = medfilt2(imMediana(:,:,3) ,...
         [ventAlto ventAncho]);
 end
-
+toc;
 f = figure('Name', 'Mediana');
 imshow(imMediana);
 
@@ -97,8 +98,8 @@ for iFilas = posY1:posY2
         % Condición de Weber segun la tolerancia
         statement1 = contrastWeber(iFilas-posY1+1,jColum-posX1+1)>tc; 
         % Condicion para el interior del circulo
-        statement2 = (iFilas-posY1+1-posCent(2))^2+...
-                        (jColum-posX1+1-posCent(1))^2 <= (radio*0.95)^2;
+        statement2 = (iFilas-posCent(2))^2+...
+                        (jColum-posCent(1))^2 <= (radio*0.95)^2;
         if(statement1 && statement2)
             imModifCort(iFilas-posY1+1,jColum-posX1+1,:) = ...
                 imMediana(iFilas-posY1+1,jColum-posX1+1,:);

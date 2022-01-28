@@ -14,6 +14,7 @@ function [] = extraerframes(vidObj,...
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
 
+% Dependiendo de los parametros opcionales
 if (nargin == 4)
     resolucionSalida = 1;
     select = SIN_SUBMUESTRO;
@@ -22,7 +23,9 @@ if (nargin == 5)
     select = SIN_SUBMUESTRO;
 end
 
-vidObj.CurrentTime = frameIni/vidObj.FrameRate; % Tiempo inicial
+% Configurando el tiempo inicial del video
+vidObj.CurrentTime = frameIni/vidObj.FrameRate;
+% Se obtiene la ruta del video
 [~,name,ext] = fileparts(vidObj.Path);
 
 % Recorrido del video para extraccion de frames
@@ -35,30 +38,32 @@ vidName = strcat(name,ext);
 frameSelected = zeros(round(vidObj.Duration*vidObj.FrameRate),1,'logical');
 frameRate = vidObj.FrameRate;
 
-while vidObj.CurrentTime <= endTime % Inicio while 1
+while vidObj.CurrentTime <= endTime % Inicio while 
     vidFrame = readFrame(vidObj);
-    if (select == SUBMUESTREO) % Inicio if 1
-        if (mod(iFrame,2)~= 0) % Inicio if 2
-            % Solo se obtienen los frames impares
-            % Se rescala la imagen segun el factor de escala
+    pathCompleto = fullfile(folderFrames,sprintf('Image_%i.jpg',iFrame));
+    if (~isfile(pathCompleto)) % Inicio if 1 (Pregunta si no hay archivo)
+        if (select == SUBMUESTREO) % Inicio if 2
+            if (mod(iFrame,2)~= 0) % Inicio if 3
+                % Solo se obtienen los frames impares
+                % Se rescala la imagen segun el factor de escala
+                vidFrame = imresize(vidFrame,resolucionSalida);
+                imwrite(vidFrame,pathCompleto);
+                frameSelected(iFrame) = 1;  
+            end % Fin If 3
+        elseif(select == SIN_SUBMUESTREO) % Inicio elseif 2
             vidFrame = imresize(vidFrame,resolucionSalida);
-            pathCompleto = fullfile(folderFrames,...
-                sprintf('Image_%i.jpg',iFrame));
             imwrite(vidFrame,pathCompleto);
             frameSelected(iFrame) = 1;
-        end % Fin If 2
-    elseif(select == SIN_SUBMUESTREO) % Inicio elseif 1
-        vidFrame = imresize(vidFrame,resolucionSalida);
-        pathCompleto = fullfile(folderFrames,...
-            sprintf('Image_%i.jpg',iFrame));
-        imwrite(vidFrame,pathCompleto);
+        end % ====== Fin If 2
+    else
         frameSelected(iFrame) = 1;
-    end % Fin If 1
-    iFrame = iFrame + 1;
-    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
-end % Fin while 1
+    end % Fin if 1
+        iFrame = iFrame + 1;
+        waitbar((iFrame-frameIni)/(frameFin-frameIni));
+end % Fin while
 close(barraWait);
 
+% Guardado de metadatos
 pathMetadatos = fullfile(folderFrames,'metadatos.mat');
 save(pathMetadatos,'frameRate','frameIni','frameFin','vidName',...
     'frameSelected');
