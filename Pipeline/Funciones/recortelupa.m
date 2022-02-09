@@ -46,11 +46,11 @@ posiciones = [posX1 posX2; posY1 posY2];
 imCort = imRGB(posY1:posY2,posX1:posX2,:);
 
 if(select == SIN_FONDO)
-    for iFilas = 1:M
-        for jColum = 1:N
+    for iFilas = 1:size(imCort,1)
+        for jColum = 1:size(imCort,2)
             % Ecuacion de circunferencia
-            if( ( iFilas-posCent(2) )^2 + ...
-                    ( jColum-posCent(1) )^2 > (radio*0.95)^2)
+            if( ( iFilas +posY1 -1 -posCent(2) )^2 + ...
+                    ( jColum +posX1 -1 -posCent(1) )^2 > (radio*0.95)^2)
                 imCort(iFilas,jColum,:) = 0;
             end
         end

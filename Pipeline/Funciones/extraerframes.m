@@ -65,8 +65,7 @@ close(barraWait);
 
 % Guardado de metadatos
 pathMetadatos = fullfile(folderFrames,'metadatos.mat');
-save(pathMetadatos,'frameRate','frameIni','frameFin','vidName',...
-    'frameSelected');
+save(pathMetadatos,'frameRate','vidName','frameSelected');
 
 end
 

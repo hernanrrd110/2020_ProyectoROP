@@ -1,4 +1,4 @@
-function [mascara_HSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal)
+function [mascaraHSV] = enmascarhsv(imHSV,tol,hsvVal)
 %ENMASCAR_HSV Enmascarado imagen segun el valor de hsv y tolerancia dado.
 %   Establece un conjunto de valores de HSV de la imagen segun los
 %   parametros dados y crea una mascara binaria para los pixeles que
@@ -9,7 +9,7 @@ function [mascara_HSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal)
 %   tol: vector con valores de tolerancia en H, S y V
 %   hsvVal: vector de 1x3 con los valores de HSV a comparar
     % Diferencias absolutas entre valores de cada pixel y el valor elegido
-    [M,N,t] = size(imHSV); 
+    [M,N,~] = size(imHSV); 
     
     if (nargin == 3)
         diffH = abs(imHSV(:,:,1) - hsvVal(1));
@@ -48,7 +48,7 @@ function [mascara_HSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal)
         I3(diffV <= tol(3)) = 1;
         
         % creacion de las mascaras
-        mascara_HSV = I1.*I2.*I3;
+        mascaraHSV = I1.*I2.*I3;
         
     else     
         % Define thresholds for channel 1 based on histogram settings
@@ -71,26 +71,13 @@ function [mascara_HSV, puntajeHSV] = enmascarhsv(imHSV,tol,hsvVal)
             (imHSV(:,:,2) <= channel2Max) & ...
             (imHSV(:,:,3) >= channel3Min ) & ...
             (imHSV(:,:,3) <= channel3Max);
-        mascara_HSV = double(sliderBW);
+        mascaraHSV = double(sliderBW);
         % Initialize output masked image based on input image.
         % mascara_HSV = imRGB;
 
         % Set background pixels where BW is false to zero.
         % mascara_HSV(repmat(~BW,[1 1 3])) = 0;
     end
-    contador_pix = 0;
-    
-    for i=1:M
-        for j=1:N
-            if (mascara_HSV(i,j) == 1)
-                contador_pix = contador_pix + 1;
-            end
-        end
-    end
-    
-    % Conformacion del puntaje HSV por proporcion 
-    % de los pixeles retinianos
-    puntajeHSV = contador_pix/(M*N);
     
 end
 
