@@ -38,7 +38,6 @@ if(~isempty(posCent))
 else
     imCort = imRGB;
 end
-
 figure(); imshow(imCort);
 imCort = imCort(:,:,2);
 

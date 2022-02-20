@@ -23,7 +23,7 @@ SUBMUESTREO = 1;
 %     uigetdir('Introducir carperta de destino de extraccion de cuadros'); 
 folderName = ...
     'D:\GitHub Repositorio\2020_ProyectoROP\Pipeline\Frames_Videos\Prueba';
-fprintf('Direccion de frames seleccionada\n');
+fprintf('-- Direccion de frames seleccionada\n');
 fprintf('%s\n', folderName);
 
 frameIni = 1;
@@ -191,10 +191,11 @@ end
 
 GaussNormalizado = frecGauss;
 GaussNormalizado = GaussNormalizado/max(GaussNormalizado);
-GaussNormalizado(isnan(GaussNormalizado)) = 0;
+GaussNormalizado(isnan(GaussNormalizado)) = 0; 
 
 aux = frameSelected(:,3);
 aux(GaussNormalizado >= 0.9) = 1;
+aux(GaussNormalizado < 0.9) = 0;
 frameSelected(:,4) = aux;
 disp(' ========== Clasificacion frecuencial completa ==============')
 close(barraWait);
@@ -254,22 +255,30 @@ close(barraWait);
 %% ======================= Realce de Vasos ==========================
 load(pathMetadatos);
 barraWait = waitbar(0,'Realce de Vasos');
+tic;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,4) == 1)
         % Lectura de imagen
-        pathImagen = fullfile(folderName,...
+        pathmascara = fullfile(folderName,...
             sprintf('MascaraHSV_%i.jpg',iFrame));
+        pathImagen = fullfile(folderName,...
+            sprintf('Image_%i.jpg',iFrame));
         imRGB = im2double(imread(pathImagen));
+        mascaraNoBinaria = im2double(imread(pathmascara));
+        mascaraBinaria = ...
+            clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
         % Removemos los artefactos de la imagen 
-        [imModif] = resaltarvasos(imRGB,posCent(iFrame,:),radio(iFrame));
+        [imModif] = ...
+            resaltarvasos(mascaraNoBinaria,...
+            posCent(iFrame,:),radio(iFrame));
         % Guardamos la imagen 
-        imwrite(imModif,pathSalida);
+        imwrite(imModif.*mascaraBinaria,pathSalida);
     end
     % Cambio en la barra de progreso
     waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
 end
-
+toc;
 disp(' =============  Realce de Vasos completado ===============')
 close(barraWait);
 
@@ -291,18 +300,6 @@ writetable(tablaFrecuencial,fullfile(folderName,'tablaFrecuencias.xlsx'));
 
 % Obtenemos la resolucion de pantalla
 screenReso = get(0,'screensize'); 
-
-% % Figura de la tabla
-% fTablaFrec = figure('Name', 'Tabla de puntajes frecuenciales');
-% uiTablaFrec = uitable(fTablaFrec);
-% uiTablaFrec.Data = table2array(tablaFrecuencial);
-% uiTablaFrec.ColumnName = tablaFrecuencial.Properties.VariableNames;
-% 
-% % Configuramos la posicion de la figura y la tabla
-% set(gcf,'OuterPosition',[0 0 ...
-%     screenReso(3) screenReso(4)]);
-% set(uiTablaFrec,'OuterPosition',[screenReso(3)*0.05 screenReso(4)*0.05 ...
-%     screenReso(3)*0.9 screenReso(4)*0.83]);
 
 figure('Name', 'Valores de puntaje Frecuencial');  
 subplot 211;
@@ -350,5 +347,50 @@ set(uiTablaHSV,'OuterPosition',[screenReso(3)*0.05 screenReso(4)*0.05 ...
 figure('Name', 'Valores de clasificacion HSV');
 plot(vectorFrames,etapas.clasHSV(frameIni:frameFin));
 title 'HSV 1';
+
+
+%% Creacion de video apartir de imagenes
+
+% Se contruye un objeto VideoWriter, 
+% que crea un archivo AVI Motion-JPEG de forma predeterminada.
+
+outputVideo = VideoWriter(fullfile(folderName,'videoSalida.avi'));
+outputVideo.FrameRate = 60;
+open(outputVideo)
+% Se recorre la secuencia de imágenes, cargue cada imagen y luego 
+% escribirla en el vídeo.
+iFrame = 1;
+repetido = 0;
+
+barraWait = waitbar(0,'Video de salida');
+while(iFrame <= framesNo)
+    if(frameSelected(iFrame,1) == 1)
+        pathImagen = fullfile(folderName,...
+            sprintf('Image_%i.jpg',iFrame));
+        if(frameSelected(iFrame,4)== 1)
+            if(repetido == 1)% Si ya se repitio
+                iFrame = iFrame + 1;
+                repetido = 0;
+            else
+                repetido = 1;
+            end
+        else
+            iFrame = iFrame + 1;
+        end
+        imRGB = im2double(imread(pathImagen));
+        writeVideo(outputVideo,imRGB);
+    else
+        
+        iFrame = iFrame + 1;
+    end
+    
+    % Cambio en la barra de progreso
+    waitbar(iFrame/framesNo)
+    
+end
+close(barraWait);
+
+% Finalizamos el archivo de vídeo.
+close(outputVideo)
 
     

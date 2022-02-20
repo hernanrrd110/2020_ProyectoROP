@@ -38,33 +38,34 @@ vidName = strcat(name,ext);
 frameSelected = zeros(round(vidObj.Duration*vidObj.FrameRate),1,'logical');
 frameRate = vidObj.FrameRate;
 
-while vidObj.CurrentTime <= endTime % Inicio while
+while vidObj.CurrentTime <= endTime % Inicio while 
     vidFrame = readFrame(vidObj);
     pathCompleto = fullfile(folderFrames,sprintf('Image_%i.jpg',iFrame));
     if (~isfile(pathCompleto)) % Inicio if 1 (Pregunta si no hay archivo)
         if (select == SUBMUESTREO) % Inicio if 2
             if (mod(iFrame,2)~= 0) % Inicio if 3
-                % Solo se seleccionan los frames impares
-                frameSelected(iFrame) = 1;
+                % Solo se obtienen los frames impares
+                % Se rescala la imagen segun el factor de escala
+                vidFrame = imresize(vidFrame,resolucionSalida);
+                imwrite(vidFrame,pathCompleto);
+                frameSelected(iFrame) = 1;  
             end % Fin If 3
         elseif(select == SIN_SUBMUESTREO) % Inicio elseif 2
+            vidFrame = imresize(vidFrame,resolucionSalida);
+            imwrite(vidFrame,pathCompleto);
             frameSelected(iFrame) = 1;
         end % ====== Fin If 2
     else
         frameSelected(iFrame) = 1;
     end % Fin if 1
-    vidFrame = imresize(vidFrame,resolucionSalida);
-    imwrite(vidFrame,pathCompleto);
-    iFrame = iFrame + 1;
-    waitbar((iFrame-frameIni)/(frameFin-frameIni));
+        iFrame = iFrame + 1;
+        waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end % Fin while
 close(barraWait);
 
 % Guardado de metadatos
 pathMetadatos = fullfile(folderFrames,'metadatos.mat');
-if(exist(pathMetadatos,'file') == 0)
-    save(pathMetadatos,'frameRate','vidName','frameSelected');
-end
+save(pathMetadatos,'frameRate','vidName','frameSelected');
 
 end
 
