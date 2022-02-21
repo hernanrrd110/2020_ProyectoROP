@@ -83,7 +83,7 @@ imshow(imLoGMax,[]); title('Escala Grises filtrada LoG');
 %   Aplicacion de filtros sucesivos de Gabor Wavelet con respuesta en
 %   magnitud y en fase
 
-waveLgth = [10]; % vector de longitudes de onda
+waveLgth = [5 10]; % vector de longitudes de onda
 orient = 0:10:170; % Vector de Orientaciones 
 
 % Arreglo de objetos gabor para el filtrado
@@ -101,16 +101,20 @@ for iFilas=1:size(imGaborMax,1)
     end
 end
 
-for iFilas = 1:size(imCort,1)
-    for jColum = 1:size(imCort,2)
-        % Ecuacion de circunferencia
-        if( ( iFilas +posY1 -1 -posCent(2) )^2 + ...
-                ( jColum +posX1 -1 -posCent(1) )^2 > (radio*0.95)^2)
-            imLoGMax(iFilas,jColum,:) = 0;
+
+if(~isempty(posCent)) %Si se dectectó circunferencia
+    for iFilas = 1:size(imCort,1)
+        for jColum = 1:size(imCort,2)
+            % Ecuacion de circunferencia
+            if( ( iFilas +posY1 -1 -posCent(2) )^2 + ...
+                    ( jColum +posX1 -1 -posCent(1) )^2 > (radio*0.95)^2)
+                imLoGMax(iFilas,jColum,:) = 0;
+            end
         end
     end
 end
 
+% % Enmascaramiento HSV
 [mascaraHSV] = enmascarhsv(rgb2hsv(imCortRGB));
 imGaborMax = imGaborMax .*mascaraHSV;
 
