@@ -20,31 +20,31 @@ posCent = round(posCent);
 
 if(~isempty(posCent))
     % MACRO
-    SIN_FONDO = 0;
+    CON_FONDO = 1;
     % Recorte
-    [imCort, posiciones] = recortelupa(imRGB,posCent, radio,SIN_FONDO);
+    [imCortRGB, posiciones] = recortelupa(imRGB,posCent, radio,CON_FONDO);
     posX1 = posiciones(1,1);
     posX2 = posiciones(1,2);
     posY1 = posiciones(2,1);
     posY2 = posiciones(2,2);
     
-    [mascaraHSV, ~] = enmascarhsv(rgb2hsv(imCort));
-    imCort = imCort .*mascaraHSV;
+%     [mascaraHSV] = enmascarhsv(rgb2hsv(imCortRGB));
+%     imCort = imCort .*mascaraHSV;
     
     % % Invertimos el canal verde
     % canalVerde = imCort(:,:,2);
     % imCort(:,:,2) = (imCort(:,:,2)-max(canalVerde(:))).*(-1);
     
 else
-    imCort = imRGB;
+    imCortRGB = imRGB;
 end
-figure(); imshow(imCort);
-imCort = imCort(:,:,2);
+figure(); imshow(imCortRGB);
+imCort = imCortRGB(:,:,2);
 
 %%  ========= Filtrado LoG
 % Parametros del filtro
 filterSize = 75; % Por defecto 75
-sigma = 0.1:0.05:0.20; % valores de sigma para hacer diferentes filtros
+sigma = 0.3:0.02:0.50; % valores de sigma para hacer diferentes filtros
 
 % Declaracion de variables
 hLoG = zeros(filterSize,filterSize, length(sigma));
@@ -68,8 +68,8 @@ for iFilas = 1:size(imCort,1)
     end
 end
 
-% Normalizacion a valores de intensidad entre 0 y 1
-imLoGMax(imLoGMax<0) = 0;
+% % Normalizacion a valores de intensidad entre 0 y 1
+% imLoGMax(imLoGMax<0) = 0;
     
 valorMax = max(imLoGMax(:));
 valorMin = min(imLoGMax(:));
@@ -101,54 +101,30 @@ for iFilas=1:size(imGaborMax,1)
     end
 end
 
+for iFilas = 1:size(imCort,1)
+    for jColum = 1:size(imCort,2)
+        % Ecuacion de circunferencia
+        if( ( iFilas +posY1 -1 -posCent(2) )^2 + ...
+                ( jColum +posX1 -1 -posCent(1) )^2 > (radio*0.95)^2)
+            imLoGMax(iFilas,jColum,:) = 0;
+        end
+    end
+end
+
+[mascaraHSV] = enmascarhsv(rgb2hsv(imCortRGB));
+imGaborMax = imGaborMax .*mascaraHSV;
+
 % Normalizacion a valores de intensidad entre 0 y 1
 valorMax = max(imGaborMax(:));
 valorMin = min(imGaborMax(:));
 imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
+
+%imCort = imCort .*mascaraHSV;
 
 % ------ Graficacion
 f = figure('Name','Filtrado Gabor con respuesta maxima');
 imshow(imGaborMax); title('Respuesta en Magnitud Gabor');
 
-%% ===== Filtrado Gabor Wavelet 2
-%   Aplicacion de filtros sucesivos de Gabor Wavelet con respuesta en
-%   magnitud y en fase
 
-% -- Parametros de senoidal
-lambda = [2 5 10 15];
-uo = -1./lambda; vo = 1./lambda; % frecuencias espaciales de la senoidal compleja
-phi = 0; % Desfase de la funciones senoidal
-
-% -- Parametros de envolvente gaussiana
-K_GAUSS = 1; % Magnitud
-A = 1/10; B = 1/10; % factor escala de X e Y
-theta = 0:10:170; % angulo de rotacion en grados
-
-hSize = [75 75];
-imGaborFilt = zeros(M,N,length(theta));
-for i=1:length(theta)
-    % Filtrado de la imagen
-    for j=1:length(uo)
-        imGaborFilt(:,:,i) = filtradogabor(imGray,uo(j),vo(j),phi,...
-        K_GAUSS,A,B,theta(i),hSize);
-    end
-end
-
-imGaborMax = zeros(M,N);
-for iFilas=1:M
-    for jColum=1:N
-        imGaborMax(iFilas,jColum) = max(imGaborFilt(iFilas,jColum,:));
-    end
-end
-
-% Normalizacion a valores de intensidad entre 0 y 1
-valorMax = max(imGaborMax(:));
-valorMin = min(imGaborMax(:));
-imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
-
-% ------ Graficacion
-f = figure('Name','Filtrado Gabor con respuesta maxima');
-subplot 121; imshow(imGray); title('Imagen Original');
-subplot 122; imshow(imGaborMax); title('Respuesta en Magnitud Gabor');
 
 
