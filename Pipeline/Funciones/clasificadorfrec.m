@@ -12,8 +12,8 @@ function [puntajeFrec] = clasificadorfrec(imGray, select)
             fftH = fft2(imGray);
             fftH = fftshift(fftH);
             % valores de sigma de las envolventes gaussianas
-            sigmaM = 0.6;
-            sigmaL = 0.2;
+            sigmaM = 0.6; %def 0.6
+            sigmaL = 0.2; %def 0.2
             % Kernels gaussianos
             ventGaussM = fspecial('gaussian',[M,N],sigmaM);
             ventGaussL = fspecial('gaussian',[M,N],sigmaL);

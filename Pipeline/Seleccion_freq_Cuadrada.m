@@ -7,7 +7,7 @@ addpath('./Funciones');
 addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
-[imRGB,imGray] = cargarimagen('imagen_mov.jpg');
+[imRGB,imGray] = cargarimagen('IMG_6301.PNG');
 %'imagen_desenfocada.jpg'
 [M,N,t] = size(imRGB);
 

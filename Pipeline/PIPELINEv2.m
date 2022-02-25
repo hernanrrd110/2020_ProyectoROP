@@ -21,8 +21,9 @@ SUBMUESTREO = 1;
 % --- Interfaz de usuario para elegir la carpeta de destino 
 % folderName = ...
 %     uigetdir('Introducir carperta de destino de extraccion de cuadros'); 
-folderName = ...
-    'D:\GitHub Repositorio\2020_ProyectoROP\Pipeline\Frames_Videos\Prueba';
+folderName = './Frames_Videos/Prueba';
+folderName = fullfile(cd,folderName);
+
 fprintf('-- Direccion de frames seleccionada\n');
 fprintf('%s\n', folderName);
 
@@ -31,6 +32,7 @@ frameFin = framesNo;
 factorEscala = [1080 1920];
 
 pathMetadatos = fullfile(folderName,'metadatos.mat');
+
 %% ======================= Extraccion de frames =========================
 warning('off');
 % Si el video tiene 60 fps, submuestramos a 30 fps 
@@ -181,25 +183,44 @@ for iFrame = frameIni:frameFin
         [frecLap.LAPD(iFrame)] = ...
             fmeasure(imGray, 'LAPD');
         % Puntaje por Gauss
+%         [frecGauss(iFrame)] = ...
+%             clasificadorfrec(imGray, 'gaussiano');
         [frecGauss(iFrame)] = ...
-            clasificadorfrec(imGray, 'gaussiano');
+            fmeasure(imGray, 'SFIL');
         % Cambio en la barra de progreso
         waitbar((iFrame-frameIni)/(frameFin-frameIni));
     end 
 
 end
-
-GaussNormalizado = frecGauss;
-GaussNormalizado = GaussNormalizado/max(GaussNormalizado);
-GaussNormalizado(isnan(GaussNormalizado)) = 0; 
-
-aux = frameSelected(:,3);
-aux(GaussNormalizado >= 0.9) = 1;
-aux(GaussNormalizado < 0.9) = 0;
-frameSelected(:,4) = aux;
-disp(' ========== Clasificacion frecuencial completa ==============')
 close(barraWait);
-save(pathMetadatos,'frameSelected', 'frecLap','frecGauss','-append');
+disp(' ========== Clasificacion frecuencial completa ==============')
+
+%% Seleccionamiento
+% Valores del vector de Gauss Normalizado
+gaussNorm = frecGauss;
+gaussNorm = gaussNorm/max(gaussNorm);
+gaussNorm(isnan(gaussNorm)) = 0; 
+
+% Variable auxiliar
+aux = frameSelected(:,3);
+aux(gaussNorm >= 0.9) = 1;
+aux(gaussNorm < 0.9) = 0;
+frameSelected(:,4) = aux;
+
+% Ordenamiento de valores segun los valores normalizados de Gauss
+[gaussOrdenado, indicesOrd] = sort(gaussNorm,'descend');
+% Nos quedamos con los N elementos mas grandes
+NVal = 20;
+maxValores = gaussOrdenado(1:NVal);
+maxInd = indicesOrd(1:NVal);
+
+% Armamos valores que necesitamos
+aux = zeros(framesNo,1);
+aux(maxInd) = 1;
+frameSelected(:,5) = aux;
+
+save(pathMetadatos,'frameSelected',...
+    'frecLap','frecGauss','gaussNorm','-append');
 
 %% ======================= Remocion artefactos ========================== 
 % En esta parte se eliminan las partes de la imagen que eran por demás
@@ -258,22 +279,34 @@ barraWait = waitbar(0,'Realce de Vasos');
 tic;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
-    if(frameSelected(iFrame,4) == 1)
+    if(frameSelected(iFrame,5) == 1)
         % Lectura de imagen
         pathmascara = fullfile(folderName,...
             sprintf('MascaraHSV_%i.jpg',iFrame));
         pathImagen = fullfile(folderName,...
-            sprintf('Image_%i.jpg',iFrame));
+            sprintf('ImagenModif_%i.jpg',iFrame));
         imRGB = im2double(imread(pathImagen));
         mascaraNoBinaria = im2double(imread(pathmascara));
         mascaraBinaria = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
         % Removemos los artefactos de la imagen 
         [imModif] = ...
-            resaltarvasos(mascaraNoBinaria,...
+            resaltarvasos(imRGB,...
             posCent(iFrame,:),radio(iFrame));
+
         % Guardamos la imagen 
-        imwrite(imModif.*mascaraBinaria,pathSalida);
+        imModif2 = imModif.*mascaraBinaria;
+        CON_FONDO = 1;
+        [imModif2, ~] = ...
+            recortelupa(imModif2 ,...
+            posCent(iFrame,:), radio(iFrame),CON_FONDO);
+        
+        % Normalizacion a valores de intensidad entre 0 y 1
+        valorMax = max(imModif2(:));
+        valorMin = min(imModif2(:));
+        imModif2 = (imModif2-valorMin)./(valorMax-valorMin);
+
+        imwrite(imModif2,pathSalida);
     end
     % Cambio en la barra de progreso
     waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
@@ -301,27 +334,27 @@ writetable(tablaFrecuencial,fullfile(folderName,'tablaFrecuencias.xlsx'));
 % Obtenemos la resolucion de pantalla
 screenReso = get(0,'screensize'); 
 
-figure('Name', 'Valores de puntaje Frecuencial');  
-subplot 211;
-plot(vectorFrames,...
-    frecLap.LAPE(frameIni:frameFin)/max(frecLap.LAPE(frameIni:frameFin)));
-title 'LAPE'
-subplot 212; 
-plot(vectorFrames,...
-    frecLap.LAPD(frameIni:frameFin)/max(frecLap.LAPD(frameIni:frameFin)));
-title 'LAPD'
+% figure('Name', 'Valores de puntaje Frecuencial');  
+% subplot 211;
+% plot(vectorFrames,...
+%     frecLap.LAPE(frameIni:frameFin)/max(frecLap.LAPE(frameIni:frameFin)));
+% title 'LAPE'
+% subplot 212; 
+% plot(vectorFrames,...
+%     frecLap.LAPD(frameIni:frameFin)/max(frecLap.LAPD(frameIni:frameFin)));
+% title 'LAPD'
 
 figure('Name', 'Valores de puntaje Frecuencial 2');
-GaussNormalizado = ...
+gaussNorm = ...
     frecGauss(frameIni:frameFin);
-GaussNormalizado = GaussNormalizado/max(GaussNormalizado);
-GaussNormalizado(isnan(GaussNormalizado)) = 0;
-plot(vectorFrames,GaussNormalizado);
+gaussNorm = gaussNorm/max(gaussNorm);
+gaussNorm(isnan(gaussNorm)) = 0;
+plot(vectorFrames,gaussNorm);
 title 'Gauss';
 ylim([0 1.1])
 
 %% Tablas HSV
-% Declaracion de la tabla de valores con puntaje frecuencial
+% Declaracion de la tabla de valores con puntaje HSV
 tablaHSV = table(vectorFrames,...
     etapas.clasHSV(frameIni:frameFin));
 

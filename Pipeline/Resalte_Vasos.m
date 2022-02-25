@@ -6,16 +6,19 @@ addpath('./Imagenes');
 
 % Lectura de imagen en valores RGB
 [imRGB,imGray] = cargarimagen();
-
-%% Filtrado TotHat
-se = strel('disk',100);
+figure();imshow(imRGB)
 imVerde = imRGB(:,:,2);
+figure();imshow(imVerde)
+%% Filtrado TotHat
+se = strel('disk',100,0);
+
 imTopHat = imtophat(imVerde,se);
+figure();
 imshow(imTopHat);
 
 %% Filtrado BotHat
 se = strel('disk',70);
-imBotHat = imbothat(imTopHat,se);
+imBotHat = imbothat(imVerde,se);
 imshow(imBotHat);
 
 

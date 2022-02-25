@@ -15,7 +15,7 @@ posY2 = posiciones(2,2);
 %  ========= Filtrado LoG
 % Parametros del filtro
 filterSize = 75; % Por defecto 75
-sigma = 0.1:0.05:0.2; % valores de sigma para hacer diferentes filtros
+sigma = 0.3:0.02:0.5; % valores de sigma para hacer diferentes filtros
 
 % Declaracion de variables
 hLoG = zeros(filterSize,filterSize, length(sigma));
