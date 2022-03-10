@@ -9,16 +9,18 @@ addpath('./Imagenes');
 figure();imshow(imRGB)
 imVerde = imRGB(:,:,2);
 figure();imshow(imVerde)
-%% Filtrado TotHat
-se = strel('disk',100,0);
 
-imTopHat = imtophat(imVerde,se);
+%%
+
+imFilt = resaltarvasos(imRGB,0,0);
 figure();
-imshow(imTopHat);
+%%
+imVerdeModif = imadjust(abs(imVerde-imFilt));
+imtool(imVerdeModif);
+%%
+imRGB2 = imRGB;
+imRGB2(:,:,2) = imVerdeModif;
+imtool(imRGB2)
 
-%% Filtrado BotHat
-se = strel('disk',70);
-imBotHat = imbothat(imVerde,se);
-imshow(imBotHat);
 
 

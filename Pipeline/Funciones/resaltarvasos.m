@@ -5,13 +5,19 @@ function [imModif] = resaltarvasos(imRGB, posCent, radio)
 imVerde = imRGB(:,:,2);
 % MACRO 
 CON_FONDO = 1;
-% Recorte 
-[imCort, posiciones] = recortelupa(imVerde ,posCent, radio,CON_FONDO);
-posX1 = posiciones(1,1);
-posX2 = posiciones(1,2);
-posY1 = posiciones(2,1);
-posY2 = posiciones(2,2);
-
+% Recorte
+if(radio ~= 0)
+    [imCort, posiciones] = recortelupa(imVerde ,posCent, radio,CON_FONDO);
+    posX1 = posiciones(1,1);
+    posX2 = posiciones(1,2);
+    posY1 = posiciones(2,1);
+    posY2 = posiciones(2,2);
+else
+    imCort = imVerde;
+    posX1 = 1;
+    posY1 = 1;
+    posCent = [0,0];
+end
 %  ========= Filtrado LoG
 % Parametros del filtro
 filterSize = 75; % Por defecto 75
@@ -60,10 +66,15 @@ imGaborMax = zeros(size(imLoGMax));
 % Se selecciona la respuesta maxima de cada pixel individual para todas 
 % las iteraciones 
 
+
 for iFilas=1:size(imGaborMax,1)
     for jColum=1:size(imGaborMax,2)
-        isCirc = (iFilas+posY1-1-posCent(2))^2+...
-            (jColum+posX1-1-posCent(1))^2 <= (radio*0.95)^2;
+        if(radio ~= 0)
+            isCirc = (iFilas+posY1-1-posCent(2))^2+...
+                (jColum+posX1-1-posCent(1))^2 <= (radio*0.95)^2;
+        else
+            isCirc = 1;
+        end
         if(isCirc)
             imGaborMax(iFilas,jColum) = max(magResp(iFilas,jColum,:));
         else 
@@ -77,9 +88,12 @@ valorMax = max(imGaborMax(:));
 valorMin = min(imGaborMax(:));
 imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
 
-imModif = imVerde;
-imModif(posY1:posY2,posX1:posX2,:) = imGaborMax;
-
+if(radio ~= 0)
+    imModif = imVerde;
+    imModif(posY1:posY2,posX1:posX2,:) = imGaborMax;
+else
+    imModif = imGaborMax;
+end
 
 end
 

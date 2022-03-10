@@ -17,11 +17,11 @@ addpath('./Imagenes');
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
 % Declaracion del objeto para manejar el video
-[vidObj, framesNo] = cargarvideo('ID_68_VIDEO.mp4');
+[vidObj, framesNo] = cargarvideo('ID_69_VIDEO.mp4');
 % --- Interfaz de usuario para elegir la carpeta de destino 
 % folderName = ...
 %     uigetdir('Introducir carperta de destino de extraccion de cuadros'); 
-folderName = './Frames_Videos/Prueba';
+folderName = './Frames_Videos/ID_69';
 folderName = fullfile(cd,folderName);
 
 fprintf('-- Direccion de frames seleccionada\n');
@@ -33,14 +33,19 @@ factorEscala = [1080 1920];
 
 pathMetadatos = fullfile(folderName,'metadatos.mat');
 
+if(exist(pathMetadatos,'file') == 2)
+    load(pathMetadatos);
+end
+
 %% ======================= Extraccion de frames =========================
 warning('off');
-% Si el video tiene 60 fps, submuestramos a 30 fps 
-if (vidObj.FrameRate == 60)
-    select = SUBMUESTREO;
-else
-    select = SIN_SUBMUESTREO;
-end
+% % Si el video tiene 60 fps, submuestramos a 30 fps 
+% if (vidObj.FrameRate == 60)
+%     select = SUBMUESTREO;
+% else
+%     select = SIN_SUBMUESTREO;
+% end
+
 % Esta funcion, ademas de extraer los cuadros que no existen, tambien
 % resetea los metadatos
 extraerframes(vidObj,...
@@ -158,12 +163,6 @@ load(pathMetadatos);
 frameIni = 1; frameFin = framesNo;
 if(exist('frecLap','var') == 0)
     % ------- Struct para etapas de procesamiento
-    % Energy of laplacian (Subbarao92a)
-    frecLap.LAPE = zeros(framesNo,1);
-    % Modified Laplacian (Nayar89)
-    frecLap.LAPM = zeros(framesNo,1);
-    % Variance of laplacian (Pech2000)
-    frecLap.LAPD = zeros(framesNo,1);
     % Metodo gaussiano implementado como Estrada 2011
     frecGauss = zeros(framesNo,1);
     frameSelected(:,4) = frameSelected(:,3);
@@ -195,32 +194,75 @@ end
 close(barraWait);
 disp(' ========== Clasificacion frecuencial completa ==============')
 
-%% Seleccionamiento
+%%  ===================== Selección  =====================
+load(pathMetadatos);
+% vector de cuadros 
+vecFrames = (frameIni:frameFin)';
 % Valores del vector de Gauss Normalizado
 gaussNorm = frecGauss;
 gaussNorm = gaussNorm/max(gaussNorm);
 gaussNorm(isnan(gaussNorm)) = 0; 
 
-% Variable auxiliar
-aux = frameSelected(:,3);
-aux(gaussNorm >= 0.9) = 1;
-aux(gaussNorm < 0.9) = 0;
-frameSelected(:,4) = aux;
-
 % Ordenamiento de valores segun los valores normalizados de Gauss
 [gaussOrdenado, indicesOrd] = sort(gaussNorm,'descend');
+
+% Encontramos maximos locales
+gaussNorm2 = gaussNorm(gaussNorm ~= 0);
+maxLoc = islocalmax(gaussNorm2);
+vecFrames2 = vecFrames(gaussNorm ~= 0);
+[gaussOrdenado2, indicesOrd2] = sort(gaussNorm2,'descend');
+
+NVal = 15;
 % Nos quedamos con los N elementos mas grandes
-NVal = 20;
 maxValores = gaussOrdenado(1:NVal);
 maxInd = indicesOrd(1:NVal);
+maxInd2 = vecFrames2(indicesOrd2(1:NVal));
+
+% Seleccion primaria
+aux = zeros(framesNo,1);
+aux(vecFrames2(gaussNorm2 >= 0.75)) = 1;
+aux(vecFrames2(gaussNorm2 < 0.75)) = 0;
+frameSelected(:,4) = aux;
 
 % Armamos valores que necesitamos
 aux = zeros(framesNo,1);
-aux(maxInd) = 1;
+aux(maxInd2) = 1;
 frameSelected(:,5) = aux;
 
+if(nnz(frameSelected(:,4)) < nnz(frameSelected(:,5)))
+    frameSelected(:,4) = frameSelected(:,5);
+end
+
 save(pathMetadatos,'frameSelected',...
-    'frecLap','frecGauss','gaussNorm','-append');
+    'frecGauss','gaussNorm','-append');
+
+%% Mostramos los valores frecuenciales
+close all;
+
+% Obtenemos la resolucion de pantalla
+screenReso = get(0,'screensize'); 
+
+figure('Name', 'Valores de puntaje');
+
+plot(vecFrames2,gaussNorm2);
+hold on; plot(vecFrames2, 0.7 * ones(size(vecFrames2)));
+hold on; plot(vecFrames(frameSelected(:,4)), ...
+    gaussNorm(frameSelected(:,4)),'c*' );
+title 'Gauss';
+ylim([0 1.1])
+
+%% Valores HSV
+
+% Configuramos la posicion de la figura y la tabla
+set(gcf,'OuterPosition',[0 0 ...
+    screenReso(3) screenReso(4)]);
+set(uiTablaHSV,'OuterPosition',[screenReso(3)*0.05 screenReso(4)*0.05 ...
+    screenReso(3)*0.9 screenReso(4)*0.83]);
+
+figure('Name', 'Valores de clasificacion HSV');
+plot(vecFrames,etapas.clasHSV(frameIni:frameFin));
+title 'HSV 1';
+
 
 %% ======================= Remocion artefactos ========================== 
 % En esta parte se eliminan las partes de la imagen que eran por demás
@@ -279,7 +321,7 @@ barraWait = waitbar(0,'Realce de Vasos');
 tic;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
-    if(frameSelected(iFrame,5) == 1)
+    if(frameSelected(iFrame,4) == 1)
         % Lectura de imagen
         pathmascara = fullfile(folderName,...
             sprintf('MascaraHSV_%i.jpg',iFrame));
@@ -289,7 +331,7 @@ for iFrame = frameIni:frameFin
         mascaraNoBinaria = im2double(imread(pathmascara));
         mascaraBinaria = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
-        % Removemos los artefactos de la imagen 
+        
         [imModif] = ...
             resaltarvasos(imRGB,...
             posCent(iFrame,:),radio(iFrame));
@@ -315,106 +357,45 @@ toc;
 disp(' =============  Realce de Vasos completado ===============')
 close(barraWait);
 
-%% Mostramos los valores frecuenciales en formato tabla
-close all;
-vectorFrames = (frameIni:frameFin)';
-% Declaracion de la tabla de valores con puntaje frecuencial
-tablaFrecuencial = table(vectorFrames,...
-    frecLap.LAPE(frameIni:frameFin),...
-    frecLap.LAPD(frameIni:frameFin),...
-    frecGauss(frameIni:frameFin));
-
-% Nombres de la columnas de la tabla
-tablaFrecuencial.Properties.VariableNames = ...
-    {'N_frame','LAPE','LAPD','Gauss'};
-
-% Se crea un archivo de planilla para la tabla de frecuencias
-writetable(tablaFrecuencial,fullfile(folderName,'tablaFrecuencias.xlsx'));
-
-% Obtenemos la resolucion de pantalla
-screenReso = get(0,'screensize'); 
-
-% figure('Name', 'Valores de puntaje Frecuencial');  
-% subplot 211;
-% plot(vectorFrames,...
-%     frecLap.LAPE(frameIni:frameFin)/max(frecLap.LAPE(frameIni:frameFin)));
-% title 'LAPE'
-% subplot 212; 
-% plot(vectorFrames,...
-%     frecLap.LAPD(frameIni:frameFin)/max(frecLap.LAPD(frameIni:frameFin)));
-% title 'LAPD'
-
-figure('Name', 'Valores de puntaje Frecuencial 2');
-gaussNorm = ...
-    frecGauss(frameIni:frameFin);
-gaussNorm = gaussNorm/max(gaussNorm);
-gaussNorm(isnan(gaussNorm)) = 0;
-plot(vectorFrames,gaussNorm);
-title 'Gauss';
-ylim([0 1.1])
-
-%% Tablas HSV
-% Declaracion de la tabla de valores con puntaje HSV
-tablaHSV = table(vectorFrames,...
-    etapas.clasHSV(frameIni:frameFin));
-
-% Nombres de la columnas de la tabla
-tablaHSV.Properties.VariableNames = ...
-    {'N_frame','HSV'};
-
-% Se crea un archivo de planilla para la tabla de frecuencias
-writetable(tablaHSV,fullfile(folderName,'tablaHSV.xlsx'));
-
-% Figura de la tabla
-fTablaHSV = figure();
-uiTablaHSV = uitable(fTablaHSV);
-uiTablaHSV.Data = table2array(tablaHSV);
-uiTablaHSV.ColumnName = tablaHSV.Properties.VariableNames;
-
-% Configuramos la posicion de la figura y la tabla
-set(gcf,'OuterPosition',[0 0 ...
-    screenReso(3) screenReso(4)]);
-set(uiTablaHSV,'OuterPosition',[screenReso(3)*0.05 screenReso(4)*0.05 ...
-    screenReso(3)*0.9 screenReso(4)*0.83]);
-
-figure('Name', 'Valores de clasificacion HSV');
-plot(vectorFrames,etapas.clasHSV(frameIni:frameFin));
-title 'HSV 1';
-
-
+ 
 %% Creacion de video apartir de imagenes
 
 % Se contruye un objeto VideoWriter, 
 % que crea un archivo AVI Motion-JPEG de forma predeterminada.
 
 outputVideo = VideoWriter(fullfile(folderName,'videoSalida.avi'));
-outputVideo.FrameRate = 60;
+outputVideo.FrameRate = 2*frameRate;
 open(outputVideo)
 % Se recorre la secuencia de imágenes, cargue cada imagen y luego 
 % escribirla en el vídeo.
 iFrame = 1;
-repetido = 0;
-
+repetido = 1;
+numRep = 3;
 barraWait = waitbar(0,'Video de salida');
 while(iFrame <= framesNo)
-    if(frameSelected(iFrame,1) == 1)
+    if(frameSelected(iFrame,4)== 1)
+        % Path de la imagen
+        pathImagen = fullfile(folderName,...
+            sprintf('ImagenModif_%i.jpg',iFrame));
+        pathVasos = fullfile(folderName,...
+            sprintf('Vasos_%i.jpg',iFrame));
+        % Lectura de imagen
+        imRGB = im2double(imread(pathImagen));
+        imVasos = im2double(imread(pathVasos));
+        imFinal = imRGB;
+        imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-imVasos));
+        if(repetido == numRep)% Si ya se repitio
+            iFrame = iFrame + 1;
+            repetido = 1;
+        else
+            repetido = repetido + 1;
+        end
+    else
         pathImagen = fullfile(folderName,...
             sprintf('Image_%i.jpg',iFrame));
-        if(frameSelected(iFrame,4)== 1)
-            if(repetido == 1)% Si ya se repitio
-                iFrame = iFrame + 1;
-                repetido = 0;
-            else
-                repetido = 1;
-            end
-        else
-            iFrame = iFrame + 1;
-        end
+        iFrame = iFrame + 1;
         imRGB = im2double(imread(pathImagen));
         writeVideo(outputVideo,imRGB);
-    else
-        
-        iFrame = iFrame + 1;
     end
     
     % Cambio en la barra de progreso
