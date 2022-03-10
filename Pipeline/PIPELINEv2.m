@@ -48,6 +48,7 @@ warning('off');
 
 % Esta funcion, ademas de extraer los cuadros que no existen, tambien
 % resetea los metadatos
+frameIni = 1; frameFin = framesNo;
 extraerframes(vidObj,...
     frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO)
 load(pathMetadatos);
@@ -373,30 +374,33 @@ open(outputVideo)
 % escribirla en el vídeo.
 iFrame = 1;
 repetido = 1;
-numRep = 10;
+numRep = 20;
 barraWait = waitbar(0,'Video de salida');
-while(iFrame < framesNo)
+
+while(iFrame <= framesNo)
     if(frameSelected(iFrame,4)== 1)
-        % Path de la imagen
-        pathImagen = fullfile(folderName,...
-            sprintf('ImagenModif_%i.jpg',iFrame));
-        pathVasos = fullfile(folderName,...
-            sprintf('Vasos_%i.jpg',iFrame));
-        % Lectura de imagen
-        imRGB = im2double(imread(pathImagen));
-        imVasosRecort = im2double(imread(pathVasos));
-        imVasos = zeros(size(imRGB,1),size(imRGB,2));
-        
-        posX1 = posiciones(iFrame,1,1);
-        posX2 = posiciones(iFrame,1,2);
-        posY1 = posiciones(iFrame,2,1);
-        posY2 = posiciones(iFrame,2,2);
-        
-        imVasos(posY1:posY2,posX1:posX2,:) = imVasosRecort;
-        
-        imFinal = imRGB;
-        imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-imVasos));
-        if(repetido == numRep)% Si ya se repitio
+        if (repetido == 1)
+            % Path de la imagen
+            pathImagen = fullfile(folderName,...
+                sprintf('ImagenModif_%i.jpg',iFrame));
+            pathVasos = fullfile(folderName,...
+                sprintf('Vasos_%i.jpg',iFrame));
+            % Lectura de imagen
+            imRGB = im2double(imread(pathImagen));
+            imVasosRecort = im2double(imread(pathVasos));
+            imVasos = zeros(size(imRGB,1),size(imRGB,2));
+            
+            posX1 = posiciones(iFrame,1,1);
+            posX2 = posiciones(iFrame,1,2);
+            posY1 = posiciones(iFrame,2,1);
+            posY2 = posiciones(iFrame,2,2);
+            
+            imVasos(posY1:posY2,posX1:posX2,:) = imVasosRecort;
+            
+            imFinal = imRGB;
+            imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-imVasos));
+            repetido = 2;
+        elseif(repetido == numRep)% Si ya se repitio
             iFrame = iFrame + 1;
             repetido = 1;
         else
@@ -416,7 +420,7 @@ while(iFrame < framesNo)
     
 end
 close(barraWait);
-
+disp(' =============  Realce de Vasos completado ===============')
 % Finalizamos el archivo de vídeo.
 close(outputVideo)
 
