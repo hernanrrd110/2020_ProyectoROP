@@ -49,7 +49,7 @@ warning('off');
 % Esta funcion, ademas de extraer los cuadros que no existen, tambien
 % resetea los metadatos
 extraerframes(vidObj,...
-    frameIni,frameFin,folderName,factorEscala,select)
+    frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO)
 load(pathMetadatos);
 
 % Se extrae frameSelected de metadatos, un array que indica los frames que
@@ -318,6 +318,9 @@ close(barraWait);
 %% ======================= Realce de Vasos ==========================
 load(pathMetadatos);
 barraWait = waitbar(0,'Realce de Vasos');
+if(exist('posiciones','var') == 0)
+    posiciones = zeros(framesNo, 2, 2);
+end
 tic;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
@@ -339,7 +342,7 @@ for iFrame = frameIni:frameFin
         % Guardamos la imagen 
         imModif2 = imModif.*mascaraBinaria;
         CON_FONDO = 1;
-        [imModif2, ~] = ...
+        [imModif2, posiciones(iFrame,:,:)] = ...
             recortelupa(imModif2 ,...
             posCent(iFrame,:), radio(iFrame),CON_FONDO);
         
@@ -370,9 +373,9 @@ open(outputVideo)
 % escribirla en el vídeo.
 iFrame = 1;
 repetido = 1;
-numRep = 3;
+numRep = 10;
 barraWait = waitbar(0,'Video de salida');
-while(iFrame <= framesNo)
+while(iFrame < framesNo)
     if(frameSelected(iFrame,4)== 1)
         % Path de la imagen
         pathImagen = fullfile(folderName,...
@@ -381,7 +384,16 @@ while(iFrame <= framesNo)
             sprintf('Vasos_%i.jpg',iFrame));
         % Lectura de imagen
         imRGB = im2double(imread(pathImagen));
-        imVasos = im2double(imread(pathVasos));
+        imVasosRecort = im2double(imread(pathVasos));
+        imVasos = zeros(size(imRGB,1),size(imRGB,2));
+        
+        posX1 = posiciones(iFrame,1,1);
+        posX2 = posiciones(iFrame,1,2);
+        posY1 = posiciones(iFrame,2,1);
+        posY2 = posiciones(iFrame,2,2);
+        
+        imVasos(posY1:posY2,posX1:posX2,:) = imVasosRecort;
+        
         imFinal = imRGB;
         imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-imVasos));
         if(repetido == numRep)% Si ya se repitio
@@ -390,6 +402,7 @@ while(iFrame <= framesNo)
         else
             repetido = repetido + 1;
         end
+        writeVideo(outputVideo,imFinal);
     else
         pathImagen = fullfile(folderName,...
             sprintf('Image_%i.jpg',iFrame));

@@ -10,12 +10,12 @@ figure();imshow(imRGB)
 imVerde = imRGB(:,:,2);
 figure();imshow(imVerde)
 
-%%
-
+%% 
 imFilt = resaltarvasos(imRGB,0,0);
-figure();
+
 %%
 imVerdeModif = imadjust(abs(imVerde-imFilt));
+figure();
 imtool(imVerdeModif);
 %%
 imRGB2 = imRGB;
