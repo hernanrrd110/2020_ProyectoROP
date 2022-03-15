@@ -1,6 +1,14 @@
 function [imCort, posCent, radio] = detectorlupa(imRGB)
-%UNTITLED3 Summary of this function goes here
-%   Detailed explanation goes here
+%DETECTORLUPA Detecta la lupa por Transformada Hough y luego la enmascara
+%   * Parametros:
+%   - imRGB: imagen RGB (double), valores entre [0 , 1].
+%   * Salidas:
+%   - imCort: imagen RGB (double) con mascara no binaria que cubre la 
+%     imagen por fuera de la circunferencia.
+%   - posCent: 2x1 double con las posiciones del centro de la
+%     circunferencia.
+%   - radio: (double) radio de la circunferencia.
+
     % Conversion valores RGB a HSV
     imHSV = rgb2hsv(imRGB);
     % Creacion mascara binaria

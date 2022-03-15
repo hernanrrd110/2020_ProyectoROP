@@ -46,9 +46,9 @@ for iFilas=1:size(imLoGMax,1)
 end
 
 % Normalizacion a valores de intensidad entre 0 y 1
-valorMax = max(imLoGMax(:));
-valorMin = min(imLoGMax(:));
-imLoGMax = (imLoGMax-valorMin)./(valorMax-valorMin);
+% valorMax = max(imLoGMax(:));
+% valorMin = min(imLoGMax(:));
+% imLoGMax = (imLoGMax-valorMin)./(valorMax-valorMin);
 
 % ===== Filtrado Gabor Wavelet
 %   Aplicacion de filtros sucesivos de Gabor Wavelet con respuesta en
@@ -84,9 +84,9 @@ for iFilas=1:size(imGaborMax,1)
 end
 
 % Normalizacion a valores de intensidad entre 0 y 1
-valorMax = max(imGaborMax(:));
-valorMin = min(imGaborMax(:));
-imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
+% valorMax = max(imGaborMax(:));
+% valorMin = min(imGaborMax(:));
+% imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
 
 if(radio ~= 0)
     imModif = imVerde;

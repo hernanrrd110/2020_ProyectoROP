@@ -27,8 +27,6 @@ folderName = fullfile(cd,folderName);
 fprintf('-- Direccion de frames seleccionada\n');
 fprintf('%s\n', folderName);
 
-frameIni = 1;
-frameFin = framesNo;
 factorEscala = [1080 1920];
 
 pathMetadatos = fullfile(folderName,'metadatos.mat');
@@ -52,6 +50,8 @@ frameIni = 1; frameFin = framesNo;
 extraerframes(vidObj,...
     frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO)
 load(pathMetadatos);
+fprintf(' ======= %s - Extraccion de frames completa ========\n',...
+    datetime())
 
 % Se extrae frameSelected de metadatos, un array que indica los frames que
 % se seleccionaron para el procesamiento
@@ -95,7 +95,8 @@ for iFrame = frameIni:frameFin
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
 
-disp(' ============== Deteccion de Lupa completo ==================')
+
+fprintf(' ======= %s - Deteccion de Lupa completa ========\n',datetime())
 close(barraWait);
 save(pathMetadatos,'frameSelected','posCent','radio','-append');
 %% Recortamos la Lupa con el radio minimo detectado
@@ -154,12 +155,14 @@ for iFrame = frameIni:frameFin
     end % ======
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
-disp(' ============== Clasificacion HSV completa ==================')
+
+fprintf(' ======= %s - Clasificacion HSV completa ========\n',...
+    horaminseg())
 close(barraWait);
 
 save(pathMetadatos,'frameSelected','clasHSV','-append');
 
-%% ===================== Clasificacion frecuencial =======================
+%% ===================== Clasificacion de enfoque =======================
 load(pathMetadatos);
 frameIni = 1; frameFin = framesNo;
 if(exist('frecLap','var') == 0)
@@ -193,7 +196,8 @@ for iFrame = frameIni:frameFin
 
 end
 close(barraWait);
-disp(' ========== Clasificacion frecuencial completa ==============')
+fprintf(' ======= %s - Clasificacion de enfoque completa ========\n',...
+    horaminseg())
 
 %%  ===================== Selección  =====================
 load(pathMetadatos);
@@ -204,30 +208,30 @@ gaussNorm = frecGauss;
 gaussNorm = gaussNorm/max(gaussNorm);
 gaussNorm(isnan(gaussNorm)) = 0; 
 
-% Ordenamiento de valores segun los valores normalizados de Gauss
-[gaussOrdenado, indicesOrd] = sort(gaussNorm,'descend');
-
-% Encontramos maximos locales
+% Sacamos los valores iguales al 0
 gaussNorm2 = gaussNorm(gaussNorm ~= 0);
-maxLoc = islocalmax(gaussNorm2);
 vecFrames2 = vecFrames(gaussNorm ~= 0);
-[gaussOrdenado2, indicesOrd2] = sort(gaussNorm2,'descend');
+% Obtenemos los indices de los maximos locales para este nuevo vector
+maxLoc = islocalmax(gaussNorm2);
+% Valores de maximos locales
+gaussMaxLoc = gaussNorm2(maxLoc); 
+vecFramesMaxLoc = vecFrames2(maxLoc);
+
+% Ordenamiento de valores segun los valores normalizados de Gauss
+[~, indicesMaxLocOrd] = sort(gaussMaxLoc,'descend');
 
 NVal = 15;
 % Nos quedamos con los N elementos mas grandes
-maxValores = gaussOrdenado(1:NVal);
-maxInd = indicesOrd(1:NVal);
-maxInd2 = vecFrames2(indicesOrd2(1:NVal));
+maxFramesLocales = vecFramesMaxLoc(indicesMaxLocOrd(1:NVal));
 
 % Seleccion primaria
 aux = zeros(framesNo,1);
-aux(vecFrames2(gaussNorm2 >= 0.75)) = 1;
-aux(vecFrames2(gaussNorm2 < 0.75)) = 0;
+aux(vecFramesMaxLoc(gaussNorm(vecFramesMaxLoc)>= 0.7)) = 1;
 frameSelected(:,4) = aux;
 
 % Armamos valores que necesitamos
 aux = zeros(framesNo,1);
-aux(maxInd2) = 1;
+aux(maxFramesLocales) = 1;
 frameSelected(:,5) = aux;
 
 if(nnz(frameSelected(:,4)) < nnz(frameSelected(:,5)))
@@ -246,7 +250,7 @@ screenReso = get(0,'screensize');
 figure('Name', 'Valores de puntaje');
 
 plot(vecFrames2,gaussNorm2);
-hold on; plot(vecFrames2, 0.7 * ones(size(vecFrames2)));
+hold on; plot(vecFrames2, 0.70 * ones(size(vecFrames2)));
 hold on; plot(vecFrames(frameSelected(:,4)), ...
     gaussNorm(frameSelected(:,4)),'c*' );
 title 'Gauss';
@@ -287,7 +291,8 @@ for iFrame = frameIni:frameFin
     waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
 end
 
-disp(' ========== Remocion artefactos completa ==============')
+fprintf(' ======= %s - Remocion artefactos completa ========\n',...
+    horaminseg())
 close(barraWait);
 
 %% ============ Enmascaramiento de imagenes de fondo retinal =============
@@ -313,10 +318,10 @@ for iFrame = frameIni:frameFin
     waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
 end
 
-disp(' ========== Enmascaramiento completo ==============')
+fprintf(' ======= %s - Enmascaramiento completo ========\n',horaminseg())
 close(barraWait);
 
-%% ======================= Realce de Vasos ==========================
+%% ======================= Mapeo de Vasos ==========================
 load(pathMetadatos);
 barraWait = waitbar(0,'Realce de Vasos');
 if(exist('posiciones','var') == 0)
@@ -332,7 +337,6 @@ for iFrame = frameIni:frameFin
         pathImagen = fullfile(folderName,...
             sprintf('ImagenModif_%i.jpg',iFrame));
         imRGB = im2double(imread(pathImagen));
-        mascaraNoBinaria = im2double(imread(pathmascara));
         mascaraBinaria = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
         
@@ -354,11 +358,26 @@ for iFrame = frameIni:frameFin
 
         imwrite(imModif2,pathSalida);
     end
+    if(exist(fullfile(folderName,'./Imagenes_Mosaico'), 'dir') == 0)
+       mkdir(fullfile(folderName,'./Imagenes_Mosaico')); 
+    end
+    
+    pathMosaico =  fullfile(folderName,...
+        './Imagenes_Mosaico',sprintf('Vasos_%i.jpg',iFrame)); 
+    pathBin=  fullfile(folderName,...
+        './Imagenes_Mosaico',sprintf('ImBinario_%i.jpg',iFrame)); 
+    if(frameSelected(iFrame,5) == 1)
+       imwrite(imModif2,pathMosaico);
+       imBinaria = imbinarize(imModif2,0.4);
+       imwrite(imBinaria,pathBin);
+    end
+    
     % Cambio en la barra de progreso
     waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
 end
 toc;
-disp(' =============  Realce de Vasos completado ===============')
+fprintf(' ======= %s - Realce de Vasos completado ========\n',...
+    horaminseg());
 close(barraWait);
 
  
@@ -374,7 +393,7 @@ open(outputVideo)
 % escribirla en el vídeo.
 iFrame = 1;
 repetido = 1;
-numRep = 20;
+numRep = 50;
 barraWait = waitbar(0,'Video de salida');
 
 while(iFrame <= framesNo)
@@ -398,7 +417,7 @@ while(iFrame <= framesNo)
             imVasos(posY1:posY2,posX1:posX2,:) = imVasosRecort;
             
             imFinal = imRGB;
-            imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-imVasos));
+            imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-0.3*imVasos));
             repetido = 2;
         elseif(repetido == numRep)% Si ya se repitio
             iFrame = iFrame + 1;
@@ -420,7 +439,7 @@ while(iFrame <= framesNo)
     
 end
 close(barraWait);
-disp(' =============  Realce de Vasos completado ===============')
+fprintf(' ======= %s - Salida de Video completa ========\n',horaminseg());
 % Finalizamos el archivo de vídeo.
 close(outputVideo)
 
