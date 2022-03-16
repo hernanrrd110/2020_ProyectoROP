@@ -323,11 +323,12 @@ close(barraWait);
 
 %% ======================= Mapeo de Vasos ==========================
 load(pathMetadatos);
-barraWait = waitbar(0,'Realce de Vasos');
+barraWait = waitbar(0,'Mapeo de vasos');
 if(exist('posiciones','var') == 0)
     posiciones = zeros(framesNo, 2, 2);
 end
 tic;
+frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,4) == 1)
@@ -368,7 +369,7 @@ for iFrame = frameIni:frameFin
         './Imagenes_Mosaico',sprintf('ImBinario_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,5) == 1)
        imwrite(imModif2,pathMosaico);
-       imBinaria = imbinarize(imModif2,0.4);
+       imBinaria = imbinarize(imModif2,0.25);
        imwrite(imBinaria,pathBin);
     end
     

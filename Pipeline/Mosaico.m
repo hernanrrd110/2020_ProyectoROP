@@ -4,8 +4,8 @@ clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 
-[imRGB1,imGray1] = cargarimagen();
-[imRGB2,imGray2] = cargarimagen();
+[imRGB1,imGray1] = cargarimagen('MascaraHSV_819.jpg');
+[imRGB2,imGray2] = cargarimagen('Vasos_1229.jpg');
 
 %% Etapa 2 - Registro de pares de imagenes 
 
