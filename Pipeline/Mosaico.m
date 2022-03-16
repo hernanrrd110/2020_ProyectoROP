@@ -4,14 +4,24 @@ clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 
-[imRGB1,imGray1] = cargarimagen('MascaraHSV_819.jpg');
-[imRGB2,imGray2] = cargarimagen('Vasos_1229.jpg');
+[~,imGray1] = cargarimagen('Vasos_819.jpg');
+[~,imGray2] = cargarimagen('Vasos_1229.jpg');
+
+imGray1 = imadjust(imGray1);
+imGray2 = imadjust(imGray2);
 
 %% Etapa 2 - Registro de pares de imagenes 
 
 points = detectSURFFeatures(imGray1);
 [features, points] = extractFeatures(imGray1, points);
 
+figure; imshow(imGray1); hold on; plot(points.selectStrongest(10));
+
+points = detectSURFFeatures(imGray2);
+[features, points] = extractFeatures(imGray2, points);
+
+figure; imshow(imGray2); hold on; plot(points.selectStrongest(10));
+%%
 % Initialize all the transforms to the identity matrix. Note that the
 % projective transform is used here because the building images are fairly
 % close to the camera. Had the scene been captured from a further distance,
@@ -21,6 +31,9 @@ points = detectSURFFeatures(imGray1);
 % las transformaciones proyectiva es usada aqui debido a que las imagenes
 % se encuentran bastante cerca de la camara. Teniendo la escena capturada
 % desde una distancia mayor, una tranformacion affine seria suficiente.
+
+points = detectSURFFeatures(imGray1);
+[features, points] = extractFeatures(imGray1, points);
 
 numImages = 2; % numero de imagenes para el mosaico
 tforms(numImages) = projective2d(eye(3)); % Puede cambiarse debido a que 
