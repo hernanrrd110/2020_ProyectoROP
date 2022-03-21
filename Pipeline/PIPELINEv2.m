@@ -180,14 +180,6 @@ for iFrame = frameIni:frameFin
         pathIm = fullfile(folderName,sprintf('Lupa2_%i.jpg',iFrame));
         imRGB = imread(pathIm);
         imGray = im2double(rgb2gray(imRGB));
-        % puntaje por LAPLACE
-        [frecLap.LAPE(iFrame)] = ... 
-            fmeasure(imGray, 'LAPE');
-        [frecLap.LAPD(iFrame)] = ...
-            fmeasure(imGray, 'LAPD');
-        % Puntaje por Gauss
-%         [frecGauss(iFrame)] = ...
-%             clasificadorfrec(imGray, 'gaussiano');
         [frecGauss(iFrame)] = ...
             fmeasure(imGray, 'SFIL');
         % Cambio en la barra de progreso
@@ -333,8 +325,6 @@ for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,4) == 1)
         % Lectura de imagen
-        pathmascara = fullfile(folderName,...
-            sprintf('MascaraHSV_%i.jpg',iFrame));
         pathImagen = fullfile(folderName,...
             sprintf('ImagenModif_%i.jpg',iFrame));
         imRGB = im2double(imread(pathImagen));

@@ -17,13 +17,12 @@ for iFilas = 1:size(imRGB,1)
     end
 end
 
-
 figure(); imshow(imCort)
 
 [mascaraHSV,~] = ...
             clasificadorhsv(imRGB,posCent, radio);
 mascaraTotal = mascaraHSV.*mascaraCirc;
-
+%%
 se = strel('disk',50);
 masc1 = imclose(mascaraTotal,se);
 se = strel('disk',20);
