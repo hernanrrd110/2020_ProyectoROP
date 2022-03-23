@@ -26,7 +26,7 @@ se = strel('disk',40);
 mascBin1 = imerode(mascBin1,se);
 CON_FONDO = 1;
 mascBin1 = recortelupa(mascBin1 ,...
-            posCent(165,:), radio(165),CON_FONDO);
+            posCent(165,:), radio(165),CON_FONDO); 
         
 imRGB = cargarimagen('ImagenModif_819.jpg');
 mascBin2 = clasificadorhsv(imRGB,posCent(819,:), radio(819));
@@ -45,11 +45,11 @@ points1 = detectSURFFeatures(imGray1);
 points2 = detectSURFFeatures(imGray2);
 
 % Extract the features.
-[f1,vpts1] = extractFeatures(imGray1,points1);
-[f2,vpts2] = extractFeatures(imGray2,points2);
+[f1,vpts1] = extractFeatures(imGray1,points1,'FeatureSize',128);
+[f2,vpts2] = extractFeatures(imGray2,points2,'FeatureSize',128);
 
 % Retrieve the locations of matched points.
-indexPairs = matchFeatures(f2,f1,'Unique', true);
+indexPairs = matchFeatures(f2,f1);
 matchedPoints1 = vpts1(indexPairs(:,2),:);
 matchedPoints2 = vpts2(indexPairs(:,1),:);
 
@@ -133,7 +133,7 @@ imshow(panorama)
 % vision.AlphaBlender para superponer las imágenes.
 
 blender = vision.AlphaBlender();
-blender.OpacitySource = 'Input port';
+blender.Operation = 'Blend';
 
 % Create a 2-D spatial reference object defining the size of the panorama.
 xLimits = [xMin xMax];
@@ -146,13 +146,13 @@ panoramaView = imref2d([height width], xLimits, yLimits);
 warpedImage = imwarp(imGray1, tforms(1), 'OutputView', panoramaView);
 
 % Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage,0);
+panorama = blender.step(panorama, warpedImage);
 
 % Transform I into the panorama.
 warpedImage = imwarp(imGray2, tforms(2), 'OutputView', panoramaView);
 
 % Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage,0);
+panorama = blender.step(panorama, warpedImage);
 
 figure();
 imshow(panorama)
