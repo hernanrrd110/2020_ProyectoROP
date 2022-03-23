@@ -13,6 +13,7 @@ clear all; close all; clc;
 % Agregado de carpetas de funciones e imagenes
 addpath('./Funciones');
 addpath('./Imagenes');
+warning('off');
 % MACROS
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
@@ -24,9 +25,6 @@ SUBMUESTREO = 1;
 folderName = './Frames_Videos/ID_69';
 folderName = fullfile(cd,folderName);
 
-fprintf('-- Direccion de frames seleccionada\n');
-fprintf('%s\n', folderName);
-
 factorEscala = [1080 1920];
 
 pathMetadatos = fullfile(folderName,'metadatos.mat');
@@ -36,7 +34,6 @@ if(exist(pathMetadatos,'file') == 2)
 end
 
 %% ======================= Extraccion de frames =========================
-warning('off');
 % % Si el video tiene 60 fps, submuestramos a 30 fps 
 % if (vidObj.FrameRate == 60)
 %     select = SUBMUESTREO;
@@ -51,7 +48,7 @@ extraerframes(vidObj,...
     frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO)
 load(pathMetadatos);
 fprintf(' ======= %s - Extraccion de frames completa ========\n',...
-    datetime())
+    horaminseg())
 
 % Se extrae frameSelected de metadatos, un array que indica los frames que
 % se seleccionaron para el procesamiento
@@ -96,14 +93,17 @@ for iFrame = frameIni:frameFin
 end
 
 
-fprintf(' ======= %s - Deteccion de Lupa completa ========\n',datetime())
+fprintf(' ======= %s - Deteccion de Lupa completa ========\n',horaminseg())
 close(barraWait);
 save(pathMetadatos,'frameSelected','posCent','radio','-append');
+
+
 %% Recortamos la Lupa con el radio minimo detectado
 radioMin = min(radio(frameSelected(:,2) == 1));
 radioMin = radioMin*1.10;
 
-barraWait = waitbar(0,'Deteccion Lupa con radio minimo');
+barraWait = waitbar(0,'Recorte Lupa con radio minimo');
+frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,2) == 1)
         % Creando la ruta del archivo de imagen
@@ -113,18 +113,17 @@ for iFrame = frameIni:frameFin
         pathLupa2 = fullfile(folderName,sprintf('Lupa2_%i.jpg',iFrame));
         % Cargar imagen
         imRGB = im2double(imread(pathImagen));
-        if(~isfile(pathLupa2))
-            % Recorte de Lupa 2
-            [mascaraCirc] = ...
-                enmascararcirculo(imRGB,posCent(iFrame,:),radioMin);
-            % Guardamos la imagen
-            imwrite(mascaraCirc,pathLupa2);
-            waitbar((iFrame-frameIni)/(frameFin-frameIni));
-        end
-
+        % Recorte de Lupa 2
+        [mascaraCirc] = ...
+            enmascararcirculo(imRGB,posCent(iFrame,:),radioMin);
+        % Guardamos la imagen
+        imwrite(mascaraCirc,pathLupa2);
+        waitbar((iFrame-frameIni)/(frameFin-frameIni));
+        
     end
 end
-
+fprintf(' ======= %s - Segundo Recorte Lupa completado ========\n',...
+    horaminseg())
 close(barraWait);
 %% ======================== Clasificacion HSV ===========================
 load(pathMetadatos);
@@ -165,7 +164,7 @@ save(pathMetadatos,'frameSelected','clasHSV','-append');
 %% ===================== Clasificacion de enfoque =======================
 load(pathMetadatos);
 frameIni = 1; frameFin = framesNo;
-if(exist('frecLap','var') == 0)
+if(exist('frecGauss','var') == 0)
     % ------- Struct para etapas de procesamiento
     % Metodo gaussiano implementado como Estrada 2011
     frecGauss = zeros(framesNo,1);
@@ -260,7 +259,6 @@ figure('Name', 'Valores de clasificacion HSV');
 plot(vecFrames,etapas.clasHSV(frameIni:frameFin));
 title 'HSV 1';
 
-
 %% ======================= Remocion artefactos ========================== 
 % En esta parte se eliminan las partes de la imagen que eran por demás
 % brillosas
@@ -328,15 +326,21 @@ for iFrame = frameIni:frameFin
         pathImagen = fullfile(folderName,...
             sprintf('ImagenModif_%i.jpg',iFrame));
         imRGB = im2double(imread(pathImagen));
-        mascaraBinaria = ...
+        mascBin = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
-        
+        % Creamos el mapa de vasos
         [imModif] = ...
             resaltarvasos(imRGB,...
             posCent(iFrame,:),radio(iFrame));
-
+        
+        % Strel de disco para comparacion con la funcion imclose
+        se = strel('disk',40);
+        mascBinModif = imclose(mascBin,se);
+        se = strel('disk',40);
+        mascBinModif = imerode(mascBinModif,se);
+        
         % Guardamos la imagen 
-        imModif2 = imModif.*mascaraBinaria;
+        imModif2 = imModif.*mascBinModif;
         CON_FONDO = 1;
         [imModif2, posiciones(iFrame,:,:)] = ...
             recortelupa(imModif2 ,...
@@ -346,6 +350,7 @@ for iFrame = frameIni:frameFin
         valorMax = max(imModif2(:));
         valorMin = min(imModif2(:));
         imModif2 = (imModif2-valorMin)./(valorMax-valorMin);
+        imadjust(imModif2);
 
         imwrite(imModif2,pathSalida);
     end
@@ -359,7 +364,7 @@ for iFrame = frameIni:frameFin
         './Imagenes_Mosaico',sprintf('ImBinario_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,5) == 1)
        imwrite(imModif2,pathMosaico);
-       imBinaria = imbinarize(imModif2,0.25);
+       imBinaria = imbinarize(imModif2,0.15);
        imwrite(imBinaria,pathBin);
     end
     
@@ -367,11 +372,10 @@ for iFrame = frameIni:frameFin
     waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
 end
 toc;
-fprintf(' ======= %s - Realce de Vasos completado ========\n',...
+fprintf(' ======= %s - Mapeo de vasos completado ========\n',...
     horaminseg());
 close(barraWait);
 
- 
 %% Creacion de video apartir de imagenes
 
 % Se contruye un objeto VideoWriter, 
@@ -384,7 +388,7 @@ open(outputVideo)
 % escribirla en el vídeo.
 iFrame = 1;
 repetido = 1;
-numRep = 50;
+numRep = outputVideo.FrameRate * 2.5;
 barraWait = waitbar(0,'Video de salida');
 
 while(iFrame <= framesNo)

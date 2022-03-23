@@ -21,9 +21,10 @@ function [vidObj,framesNo] = ...
     elseif (nargin == 1)
         [path,name,ext] = fileparts(pathVideo);
         filename = sprintf('%s%s',name,ext);
+        fprintf('======= Carga de Video ======= \n ');
         fprintf('-- Video Seleccionado: \n ');
         fprintf('%s\n',filename);
-        fprintf('Path:\n ');
+        fprintf('-- Path:\n ');
         if (size(path) == 0)
             which(filename);
         else

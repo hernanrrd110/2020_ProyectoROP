@@ -23,13 +23,14 @@ figure(); imshow(imCort)
             clasificadorhsv(imRGB,posCent, radio);
 mascaraTotal = mascaraHSV.*mascaraCirc;
 %%
-se = strel('disk',50);
+se = strel('disk',30);
 masc1 = imclose(mascaraTotal,se);
-se = strel('disk',20);
+se = strel('disk',15);
 masc2 = imerode(masc1,se);
 
 figure();
 imshowpair(masc1, masc2,'Scaling','joint')
+figure(); imshow(masc1.*imRGB);
 
 %%
 imBin = imbinarize(imGrayAdj);

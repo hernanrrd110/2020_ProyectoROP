@@ -29,7 +29,8 @@ function [imRGB,imGray] = cargarimagen(file)
         % Se da la direccion del archivo a abrir
     else
         [path,name,ext] = fileparts(file);
-        fprintf('Archivo Seleccionado:\n ')
+        fprintf('======= Carga de Imagen ======= \n ');
+        fprintf('-- Imagen Seleccionado:\n ')
         disp(strcat(name,ext));
         fprintf('Path:\n ')
         if(size(path) == 0)

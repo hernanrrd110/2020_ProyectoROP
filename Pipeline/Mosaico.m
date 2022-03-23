@@ -4,11 +4,13 @@ clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 
-[~,imGray1] = cargarimagen('Vasos_819.jpg');
-[~,imGray2] = cargarimagen('Vasos_1229.jpg');
+[~,imGray1] = cargarimagen('Vasos_165.jpg');
+[~,imGray2] = cargarimagen('Vasos_819.jpg');
 
 imGray1 = imadjust(imGray1);
 imGray2 = imadjust(imGray2);
+
+imGray2 = imresize(imGray2,size(imGray1));
 
 %% Etapa 2 - Registro de pares de imagenes 
 
@@ -36,7 +38,9 @@ points = detectSURFFeatures(imGray1);
 [features, points] = extractFeatures(imGray1, points);
 
 numImages = 2; % numero de imagenes para el mosaico
-tforms(numImages) = projective2d(eye(3)); % Puede cambiarse debido a que 
+tforms(numImages) = projective2d(eye(3));
+% tforms(numImages) = affine2d(eye(3)); 
+% Puede cambiarse debido a que 
 % no se necesita ninguna perspectiva para nuestro caso
 
 % Initialize variable to hold image sizes.
@@ -65,12 +69,14 @@ for n = 2:numImages
     % Estimate the transformation between I(n) and I(n-1).
     tforms(n) = estimateGeometricTransform(matchedPoints,...
         matchedPointsPrev,...
-        'projective', 'Confidence', 99.9,...
-        'MaxNumTrials', 2000);
+        'projective', 'Confidence', 99.999,...
+        'MaxNumTrials', 50000);
 
     % Compute T(n) * T(n-1) * ... * T(1)
     tforms(n).T = tforms(n).T * tforms(n-1).T;
 end
+
+%%
 % En este punto, todas las transformaciones en tforms son relativas a la 
 % primera imagen. Esta fue una forma conveniente de codificar el 
 % procedimiento de registro de imágenes porque permitió el procesamiento 
@@ -134,14 +140,14 @@ width  = round(xMax - xMin);
 height = round(yMax - yMin);
 
 % Initialize the "empty" panorama.
-panorama = zeros([height width 3], 'like', imGray1);
+panorama = zeros([height width], 'like', imGray1);
 
 %% Etapa 4 - Crear Panorama
 
 % Utiliza imwarp para mapear las imágenes en el panorama y utiliza 
 % vision.AlphaBlender para superponer las imágenes.
 
-blender = vision.AlphaBlender('Operation', 'Binary mask', ...
+blender = vision.AlphaBlender(...
     'MaskSource', 'Input port');  
 
 % Create a 2-D spatial reference object defining the size of the panorama.
@@ -150,19 +156,26 @@ yLimits = [yMin yMax];
 panoramaView = imref2d([height width], xLimits, yLimits);
 
 % Create the panorama.
-for i = 1:numImages
 
-   
-    % Transform I into the panorama.
-    warpedImage = imwarp(imGray1, tforms(i), 'OutputView', panoramaView);
-                  
-    % Generate a binary mask.    
-    mask = imwarp(true(size(imGray1,1),size(imGray1,2)), tforms(i), ...
-        'OutputView', panoramaView);
-    
-    % Overlay the warpedImage onto the panorama.
-    panorama = step(blender, panorama, warpedImage, mask);
-end
+% Transform I into the panorama.
+warpedImage = imwarp(imGray1, tforms(1), 'OutputView', panoramaView);
+
+% Generate a binary mask.
+mask = imwarp(true(size(imGray1,1),size(imGray1,2)), tforms(1), ...
+    'OutputView', panoramaView);
+
+% Overlay the warpedImage onto the panorama.
+panorama = step(blender, panorama, warpedImage);
+
+% Transform I into the panorama.
+warpedImage = imwarp(imGray2, tforms(2), 'OutputView', panoramaView);
+
+% Generate a binary mask.
+mask = imwarp(true(size(imGray2,1),size(imGray2,2)), tforms(2), ...
+    'OutputView', panoramaView);
+
+% Overlay the warpedImage onto the panorama.
+panorama = step(blender, panorama, warpedImage);
 
 figure
-imshow(panorama)
+imshow(panorama,[])

@@ -25,7 +25,7 @@ for iFilas = 1:size(imRGB,1)
         end
     end
 end
-
+mascaraHSV = mascaraHSV.*mascaraCirc;
 puntajeHSV = contHSV/areaCirculo;
 
 end
