@@ -10,34 +10,42 @@ addpath('./Imagenes');
 imGray1 = imadjust(imGray1);
 imGray2 = imadjust(imGray2);
 
-imGray2 = imresize(imGray2,size(imGray1));
-
 % Pathmetadatos
 pathMetadatos = fullfile(cd,'./Frames_Videos/ID_69/metadatos.mat');
 load(pathMetadatos);
 
 % Creacion de mascaras
-imRGB = cargarimagen('ImagenModif_165.jpg');
-mascBin1 = clasificadorhsv(imRGB,posCent(165,:), radio(165));
+imRGB1 = cargarimagen('ImagenModif_165.jpg');
+mascBin1 = clasificadorhsv(imRGB1,posCent(165,:), radio(165));
 % Strel de disco para comparacion con la funcion imclose
 se = strel('disk',40);
 mascBin1 = imclose(mascBin1,se);
-se = strel('disk',40);
+se = strel('disk',70);
 mascBin1 = imerode(mascBin1,se);
 CON_FONDO = 1;
 mascBin1 = recortelupa(mascBin1 ,...
-            posCent(165,:), radio(165),CON_FONDO); 
-        
-imRGB = cargarimagen('ImagenModif_819.jpg');
-mascBin2 = clasificadorhsv(imRGB,posCent(819,:), radio(819));
+            posCent(165,:), radio(165),CON_FONDO);
+imRGB1 = recortelupa(imRGB1 ,...
+    posCent(165,:), radio(165),CON_FONDO);
+
+imRGB2 = cargarimagen('ImagenModif_819.jpg');
+mascBin2 = clasificadorhsv(imRGB2,posCent(819,:), radio(819));
 % Strel de disco para comparacion con la funcion imclose
 se = strel('disk',40);
 mascBin2 = imclose(mascBin2,se);
-se = strel('disk',40);
+se = strel('disk',70);
 mascBin2 = imerode(mascBin2,se);
 mascBin2 = recortelupa(mascBin2 ,...
-            posCent(819,:), radio(819),CON_FONDO);
-        
+    posCent(819,:), radio(819),CON_FONDO);
+imRGB2 = recortelupa(imRGB2 ,...
+    posCent(819,:), radio(819),CON_FONDO);
+% 
+imGray1 = imGray1.*mascBin1;
+imGray2 = imGray2.*mascBin2;
+
+% imGray1 = imadjust(imRGB1(:,:,2).*mascBin1);
+% imGray2 = imadjust(imRGB2(:,:,2).*mascBin2);
+
 %%
 % Encontramos las caracteristicas SURF
 pointsSURF1 = detectSURFFeatures(imGray1);
@@ -45,9 +53,9 @@ pointsSURF2 = detectSURFFeatures(imGray2);
 
 % Caracteristicas BRISK
 pointsBRISK1 = detectBRISKFeatures(imGray1,'MinContrast',0.01,...
-    'MinQuality',0.1);
+    'MinQuality',0.2);
 pointsBRISK2 = detectBRISKFeatures(imGray2,'MinContrast',0.01,...
-    'MinQuality',0.1);
+    'MinQuality',0.2);
 
 % Extraemos Carateristicas
 [fSURF1,vptsSURF1] = extractFeatures(imGray1,pointsSURF1,'FeatureSize',128);
@@ -63,7 +71,7 @@ pointsBRISK2 = detectBRISKFeatures(imGray2,'MinContrast',0.01,...
 indexPairsSURF = matchFeatures(fSURF2,fSURF1,'MatchThreshold',60,...
     'MaxRatio',0.5);
 indexPairsBRISK = matchFeatures(fFREAK2,fFREAK1,'MatchThreshold',60,...
-    'MaxRatio',0.5);
+    'MaxRatio',0.7);
 % Coincidencias únicas, especificadas como un par separado por comas que 
 % consiste en "Unique" y true o falso. Establezca este valor como true
 % para devolver sólo las coincidencias únicas entre 
@@ -91,18 +99,19 @@ legend('matched points 1','matched points 2');
 matchedBoth1 = [matchedPoSURF1.Location; matchedPoBRISK1.Location];
 matchedBoth2 = [matchedPoSURF2.Location; matchedPoBRISK2.Location];
 
+figure; showMatchedFeatures(imGray1,imGray2,matchedBoth1,matchedBoth2);
+legend('matched points 1','matched points 2');
+
 tforms = estimateGeometricTransform(matchedBoth2,...
     matchedBoth1,...
-    'similarity', 'Confidence', 99.9999,...
+    'affine', 'Confidence', 99.9999,...
     'MaxNumTrials', 1000000);
 
-
-%%
-imageSize = size(imGray1);  % all the images are the same size
 % Compute the output limits for each transform
-
+imageSize = size(imGray1);
 [xlim(1,:), ylim(1,:)] = outputLimits(affine2d(eye(3)), [1 imageSize(2)],...
     [1 imageSize(1)]);
+imageSize = size(imGray2);
 [xlim(2,:), ylim(2,:)] = outputLimits(tforms, [1 imageSize(2)],...
     [1 imageSize(1)]);
 
@@ -156,6 +165,14 @@ panorama = blender.step(panorama, warpedImage,mask);
 figure();
 imshow(panorama)
 
+%% Crear mascara completa del mosaico
+
+mascPan = panorama;
+mascPan(mascPan>0) = 1;
+se = strel('disk',20);
+mascPan = imclose(mascPan,se);
+imshowpair(panorama,mascPan);
+
 %% Etapa 4 - Crear Panorama por Mezcla
 
 % Utiliza imwarp para mapear las imágenes en el panorama y utiliza 
@@ -163,7 +180,7 @@ imshow(panorama)
 
 blender = vision.AlphaBlender();
 blender.Operation = 'Blend';
-
+blender.Opacity = 0;
 % Create a 2-D spatial reference object defining the size of the panorama.
 xLimits = [xMin xMax];
 yLimits = [yMin yMax];

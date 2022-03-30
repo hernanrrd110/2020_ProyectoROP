@@ -10,8 +10,6 @@ addpath('./Imagenes');
 imGray1 = imadjust(imGray1);
 imGray2 = imadjust(imGray2);
 
-imGray2 = imresize(imGray2,size(imGray1));
-
 % Pathmetadatos
 pathMetadatos = fullfile(cd,'./Frames_Videos/ID_69/metadatos.mat');
 load(pathMetadatos);
@@ -22,7 +20,7 @@ mascBin1 = clasificadorhsv(imRGB,posCent(165,:), radio(165));
 % Strel de disco para comparacion con la funcion imclose
 se = strel('disk',40);
 mascBin1 = imclose(mascBin1,se);
-se = strel('disk',40);
+se = strel('disk',70);
 mascBin1 = imerode(mascBin1,se);
 CON_FONDO = 1;
 mascBin1 = recortelupa(mascBin1 ,...
@@ -33,18 +31,21 @@ mascBin2 = clasificadorhsv(imRGB,posCent(819,:), radio(819));
 % Strel de disco para comparacion con la funcion imclose
 se = strel('disk',40);
 mascBin2 = imclose(mascBin2,se);
-se = strel('disk',40);
+se = strel('disk',70);
 mascBin2 = imerode(mascBin2,se);
 mascBin2 = recortelupa(mascBin2 ,...
             posCent(819,:), radio(819),CON_FONDO);
         
+imGray1 = imGray1.*mascBin1;
+imGray2 = imGray2.*mascBin2;
+        
 % imshowpair(imGray2, mascBin2,'Scaling','joint')
 %%
 % Find the SURF features.
-points1 = detectBRISKFeatures(imGray1,'MinContrast',0.4,...
-    'MinQuality',0.01);
-points2 = detectBRISKFeatures(imGray2,'MinContrast',0.4,...
-    'MinQuality',0.01);
+points1 = detectBRISKFeatures(imGray1,'MinContrast',0.2,...
+    'MinQuality',0.1);
+points2 = detectBRISKFeatures(imGray2,'MinContrast',0.2,...
+    'MinQuality',0.1);
 
 % Extract the features.
 [f1,vpts1] = extractFeatures(imGray1,...
@@ -54,7 +55,7 @@ points2 = detectBRISKFeatures(imGray2,'MinContrast',0.4,...
 
 % Retrieve the locations of matched points.
 indexPairs = matchFeatures(f2,f1,'MatchThreshold',80,...
-    'MaxRatio',0.6);
+    'MaxRatio',0.5);
 matchedPoints1 = vpts1(indexPairs(:,2),:);
 matchedPoints2 = vpts2(indexPairs(:,1),:);
 

@@ -11,8 +11,8 @@ imHSV = rgb2hsv(imRGB);
 % Mascara binaria para deteccion de lupa
 [imMascBin] = crearmascaralupa(imHSV);
 imMascBin = double(imMascBin);
-figure()
-subplot 121; imshow(imRGB); title('Imagen original');
+figure() 
+imshow(imRGB); title('Imagen original');
 % imdistline;
 
 %% Etapa de deconvolucion
@@ -49,5 +49,6 @@ for iFilas = 1:size(imRGB,1)
     end
 end
 
+subplot 121; imshow(imRGB); title('Imagen Original');
 subplot 122; imshow(imCortada); title('Mascara cortada');
 

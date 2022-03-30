@@ -95,8 +95,9 @@ end
 
 fprintf(' ======= %s - Deteccion de Lupa completa ========\n',horaminseg())
 close(barraWait);
-save(pathMetadatos,'frameSelected','posCent','radio','-append');
-
+save(pathMetadatos,'frameSelected','posCent','radio','-append'); 
+% es necesario correr matlab como administrador para utilizar el comando 
+% -append
 
 %% Recortamos la Lupa con el radio minimo detectado
 radioMin = min(radio(frameSelected(:,2) == 1));
