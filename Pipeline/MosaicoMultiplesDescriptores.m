@@ -69,9 +69,9 @@ pointsBRISK2 = detectBRISKFeatures(imGray2,'MinContrast',0.01,...
 
 % Retrieve the locations of matched points.
 indexPairsSURF = matchFeatures(fSURF2,fSURF1,'MatchThreshold',60,...
-    'MaxRatio',0.5);
+    'MaxRatio',0.5,'Metric','SAD');
 indexPairsBRISK = matchFeatures(fFREAK2,fFREAK1,'MatchThreshold',60,...
-    'MaxRatio',0.7);
+    'MaxRatio',0.7,'Metric','SAD');
 % Coincidencias únicas, especificadas como un par separado por comas que 
 % consiste en "Unique" y true o falso. Establezca este valor como true
 % para devolver sólo las coincidencias únicas entre 
@@ -178,9 +178,9 @@ imshowpair(panorama,mascPan);
 % Utiliza imwarp para mapear las imágenes en el panorama y utiliza 
 % vision.AlphaBlender para superponer las imágenes.
 
-blender = vision.AlphaBlender();
+blender = vision.AlphaBlender();imshow(panorama);
 blender.Operation = 'Blend';
-blender.Opacity = 0;
+blender.Opacity = 0.0001;
 % Create a 2-D spatial reference object defining the size of the panorama.
 xLimits = [xMin xMax];
 yLimits = [yMin yMax];
@@ -189,17 +189,18 @@ panoramaView = imref2d([height width], xLimits, yLimits);
 % Create the panorama.
 
 % Transform I into the panorama.
-warpedImage = imwarp(imGray1, affine2d(eye(3)), 'OutputView', panoramaView);
+warpedImage1 = imwarp(imGray1, affine2d(eye(3)), 'OutputView', panoramaView);
 
 % Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage);
+panorama = blender.step(panorama, warpedImage1);
 
 % Transform I into the panorama.
-warpedImage = imwarp(imGray2, tforms, 'OutputView', panoramaView);
+warpedImage2 = imwarp(imGray2, tforms, 'OutputView', panoramaView);
 
 % Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage);
+panorama = blender.step(panorama, warpedImage2);
 
+% imshow(warpedImage1+warpedImage2,[])
 figure();
 imshow(panorama)
 

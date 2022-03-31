@@ -14,6 +14,7 @@ clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 warning('off');
+frameIni = 1; frameFin = framesNo;
 % MACROS
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
@@ -250,6 +251,9 @@ ylim([0 1.1])
 
 %% Valores HSV
 
+% Obtenemos la resolucion de pantalla
+screenReso = get(0,'screensize'); 
+
 % Configuramos la posicion de la figura y la tabla
 set(gcf,'OuterPosition',[0 0 ...
     screenReso(3) screenReso(4)]);
@@ -257,7 +261,7 @@ set(uiTablaHSV,'OuterPosition',[screenReso(3)*0.05 screenReso(4)*0.05 ...
     screenReso(3)*0.9 screenReso(4)*0.83]);
 
 figure('Name', 'Valores de clasificacion HSV');
-plot(vecFrames,etapas.clasHSV(frameIni:frameFin));
+plot(vecFrames,clasHSV(frameIni:frameFin));
 title 'HSV 1';
 
 %% ======================= Remocion artefactos ========================== 
@@ -265,6 +269,7 @@ title 'HSV 1';
 % brillosas
 load(pathMetadatos);
 barraWait = waitbar(0,'Remocion de artefactos');
+frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('ImagenModif_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,4) == 1)
@@ -290,6 +295,7 @@ close(barraWait);
 
 load(pathMetadatos);
 barraWait = waitbar(0,'Enmascaramiento');
+frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('MascaraHSV_%i.jpg',iFrame)); 
     if(frameSelected(iFrame,4) == 1)
