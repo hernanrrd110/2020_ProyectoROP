@@ -10,23 +10,20 @@ imHSV = im2double(rgb2hsv(imRGB));
 mascaraCirc = zeros(size(mascaraHSV));
 % Calculo del area del circulo en pixeles
 areaCirculo = round(pi*radio^2);
-contHSV = 0;
 
-% Recorrido de la imagen para enmascarar y generar el puntaje
+% Recorrido de la imagen para enmascarar
 for iFilas = 1:size(imRGB,1)
     for jColum = 1:size(imRGB,2)
         statement1 = (iFilas-posCent(2))^2+...
             (jColum-posCent(1))^2 <= (radio*0.95)^2;
-        statement2 = mascaraHSV(iFilas,jColum) == 1;
         if(statement1)
             mascaraCirc(iFilas, jColum) = 1; 
-        elseif(statement1 && statement2)
-            contHSV = contHSV + 1;
         end
     end
 end
+
 mascaraHSV = mascaraHSV.*mascaraCirc;
-puntajeHSV = contHSV/areaCirculo;
+puntajeHSV = nnz(mascaraHSV)/areaCirculo;
 
 end
 

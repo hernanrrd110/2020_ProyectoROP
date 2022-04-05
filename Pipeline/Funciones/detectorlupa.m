@@ -1,4 +1,4 @@
-function [imCort, posCent, radio] = detectorlupa(imRGB)
+function [imCort, posCent, radio] = detectorlupa(imRGB,rangoRadios)
 %DETECTORLUPA Detecta la lupa por Transformada Hough y luego la enmascara
 %   * Parametros:
 %   - imRGB: imagen RGB (double), valores entre [0 , 1].
@@ -28,13 +28,17 @@ function [imCort, posCent, radio] = detectorlupa(imRGB)
     % Filtrado pasaalto para acentuar bordes canny o sobel
     umbral = 0.2; %valor original 0.06
     imFilt = edge(imFilt,'sobel',umbral);
-
-    % Intervalo de radio del circulo a detectar
-    rangoRadio1 = round(M/3);
-    rangoRadio2 = round(M/2.2);
     
-    [posCent, radio] = imfindcircles(imFilt,[rangoRadio1 rangoRadio2],...
-        'Sensitivity',0.98,'Method','twostage');
+    if(nargin == 1)
+        % Intervalo de radio del circulo a detectar
+        rangoRadio1 = round(M/3);
+        rangoRadio2 = round(M/2.2);
+    elseif(nargin == 2)
+        rangoRadio1 = rangoRadios(1);
+        rangoRadio2 = rangoRadios(2);
+    end
+    [posCent, radio, metric] = imfindcircles(imFilt,[rangoRadio1 rangoRadio2],...
+        'Sensitivity',0.98,'Method','TwoStage');
 
     % Anular valores de la imagen fuera de la circunferencia detectada
     % Imagen original enmascarada

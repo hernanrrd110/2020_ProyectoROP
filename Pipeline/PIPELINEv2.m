@@ -1,3 +1,4 @@
+
 %% ====================== PIPELINE DE PROCESAMIENTO ======================
 % Autor: Rodriguez Ruiz Diaz, Hernan Jorge
 % =========== Secuencia de procesamiento
@@ -14,16 +15,20 @@ clear all; close all; clc;
 addpath('./Funciones');
 addpath('./Imagenes');
 warning('off');
-frameIni = 1; frameFin = framesNo;
 % MACROS
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
+SIN_FONDO = 0;
+CON_FONDO = 1;
+
 % Declaracion del objeto para manejar el video
-[vidObj, framesNo] = cargarvideo('ID_69_VIDEO.mp4');
+[vidObj, framesNo] = ...
+    cargarvideo(fullfile(cd,'./Frames_Videos/ID_67.mp4'));
+frameIni = 1; frameFin = framesNo;
 % --- Interfaz de usuario para elegir la carpeta de destino 
 % folderName = ...
 %     uigetdir('Introducir carperta de destino de extraccion de cuadros'); 
-folderName = './Frames_Videos/ID_69';
+folderName = './Frames_Videos/ID_67';
 folderName = fullfile(cd,folderName);
 
 factorEscala = [1080 1920];
@@ -45,8 +50,8 @@ end
 % Esta funcion, ademas de extraer los cuadros que no existen, tambien
 % resetea los metadatos
 frameIni = 1; frameFin = framesNo;
-extraerframes(vidObj,...
-    frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO)
+frameFinExtraido = extraerframes(vidObj,...
+    frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO);
 load(pathMetadatos);
 fprintf(' ======= %s - Extraccion de frames completa ========\n',...
     horaminseg())
@@ -58,7 +63,7 @@ fprintf(' ======= %s - Extraccion de frames completa ========\n',...
 load(pathMetadatos);
 warning('off');
 barraWait = waitbar(0,'Deteccion Lupa');
-frameIni = 1; frameFin = framesNo;
+frameIni = 1; frameFin = frameFinExtraido;
 % Seleccion de frames correspondientes a la segunda etapa
 % Si no detecta lupa, no se toma en cuenta el frame
 
@@ -74,14 +79,15 @@ for iFrame = frameIni:frameFin
         pathImagen = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
         % Verificamos que el archivo existe, en cuyo caso se emite la
         % operacion
-        pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
+%         pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
         % Cargar imagen
         imRGB = im2double(imread(pathImagen));
+
         % Extramos la lupa
-        [imCort, aux1, aux2] = detectorlupa(imRGB);
+        [imCort, aux1, aux2] = detectorlupa(imRGB,[460 560]);
         if(~isempty(imCort)) 
             % Guardamos la imagen
-            imwrite(imCort,pathLupa);
+%             imwrite(imCort,pathLupa);
             posCent(iFrame,:) = aux1;
             radio(iFrame) = aux2;
             frameSelected(iFrame,2) = 1;
@@ -95,6 +101,8 @@ end
 
 
 fprintf(' ======= %s - Deteccion de Lupa completa ========\n',horaminseg())
+fprintf(' -- Num total de detecciones: %i/%i \n',...
+    nnz(frameSelected(:,2)),nnz(frameSelected(:,1)));
 close(barraWait);
 save(pathMetadatos,'frameSelected','posCent','radio','-append'); 
 % es necesario correr matlab como administrador para utilizar el comando 
@@ -110,14 +118,17 @@ for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,2) == 1)
         % Creando la ruta del archivo de imagen
         pathImagen = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
-        % Verificamos que el archivo existe, en cuyo caso se emite la
-        % operacion
         pathLupa2 = fullfile(folderName,sprintf('Lupa2_%i.jpg',iFrame));
+        
         % Cargar imagen
         imRGB = im2double(imread(pathImagen));
         % Recorte de Lupa 2
         [mascaraCirc] = ...
             enmascararcirculo(imRGB,posCent(iFrame,:),radioMin);
+        [mascaraCirc, ~] = ...
+        recortelupa(mascaraCirc ,...
+                posCent(iFrame,:), radioMin,CON_FONDO);
+            
         % Guardamos la imagen
         imwrite(mascaraCirc,pathLupa2);
         waitbar((iFrame-frameIni)/(frameFin-frameIni));
@@ -140,14 +151,14 @@ barraWait = waitbar(0,'Clasificacion HSV');
 
 for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,2) == 1) % Si el frame fue seleccionado
-        pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
+        pathLupa = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
         % Cargar imagen de la mascara de la lupa
         imRGB = im2double(imread(pathLupa));
+
         % Extreaemos las mascaras y el puntaje
-        [mascaraHSV,clasHSV(iFrame)] = ...
+        [~,clasHSV(iFrame)] = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
-        pathMascara = fullfile(folderName,...
-            sprintf('MascaraHSV_%i.jpg',iFrame));
+        
         if(clasHSV(iFrame)<=0.4)
             frameSelected(iFrame,3) = 0;
         else
@@ -159,6 +170,8 @@ end
 
 fprintf(' ======= %s - Clasificacion HSV completa ========\n',...
     horaminseg())
+fprintf(' -- Num de clasificaciones: %i/%i \n',...
+    nnz(frameSelected(:,3)),nnz(frameSelected(:,2)));
 close(barraWait);
 
 save(pathMetadatos,'frameSelected','clasHSV','-append');
@@ -166,23 +179,27 @@ save(pathMetadatos,'frameSelected','clasHSV','-append');
 %% ===================== Clasificacion de enfoque =======================
 load(pathMetadatos);
 frameIni = 1; frameFin = framesNo;
-if(exist('frecGauss','var') == 0)
-    % ------- Struct para etapas de procesamiento
-    % Metodo gaussiano implementado como Estrada 2011
-    frecGauss = zeros(framesNo,1);
-    frameSelected(:,4) = frameSelected(:,3);
-    
+if(exist('enfoque','var') == 0)
+    % SFIL: Steerable filters-based (Minhas2009)
+    enfoque = zeros(framesNo,1);
+    frameSelected(:,4) = frameSelected(:,3);    
 end
-barraWait = waitbar(0,'Clasificación frecuencial');
+barraWait = waitbar(0,'Clasificación de enfoque');
 
 for iFrame = frameIni:frameFin
     % Si el frame esta seleccionado de la etapa anterior
     if(frameSelected(iFrame,3) == 1) 
-        pathIm = fullfile(folderName,sprintf('Lupa2_%i.jpg',iFrame));
+        pathIm = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
         imRGB = imread(pathIm);
         imGray = im2double(rgb2gray(imRGB));
-        [frecGauss(iFrame)] = ...
-            fmeasure(imGray, 'SFIL');
+        [~, pos] = ...
+        recortelupa(imRGB ,...
+                posCent(iFrame,:), radioMin,1);
+
+%         SFIL: Steerable filters-based (Minhas2009)
+        [enfoque(iFrame)] = ...
+            fmeasure(imGray, 'SFIL',...
+            [pos(1,1) pos(2,1) pos(1,2)-pos(1,1) pos(2,2)-pos(2,1)]);
         % Cambio en la barra de progreso
         waitbar((iFrame-frameIni)/(frameFin-frameIni));
     end 
@@ -192,76 +209,54 @@ close(barraWait);
 fprintf(' ======= %s - Clasificacion de enfoque completa ========\n',...
     horaminseg())
 
+save(pathMetadatos,'frameSelected','enfoque','-append');
+
 %%  ===================== Selección  =====================
 load(pathMetadatos);
 % vector de cuadros 
 vecFrames = (frameIni:frameFin)';
 % Valores del vector de Gauss Normalizado
-gaussNorm = frecGauss;
-gaussNorm = gaussNorm/max(gaussNorm);
-gaussNorm(isnan(gaussNorm)) = 0; 
+enfNorm = enfoque;
+enfNorm = enfNorm/max(enfNorm);
+enfNorm(isnan(enfNorm)) = 0; 
 
 % Sacamos los valores iguales al 0
-gaussNorm2 = gaussNorm(gaussNorm ~= 0);
-vecFrames2 = vecFrames(gaussNorm ~= 0);
+enfNorm2 = enfNorm(enfNorm ~= 0);
+vecFrames2 = vecFrames(enfNorm ~= 0);
 % Obtenemos los indices de los maximos locales para este nuevo vector
-maxLoc = islocalmax(gaussNorm2);
+maxLoc = islocalmax(enfNorm2);
 % Valores de maximos locales
-gaussMaxLoc = gaussNorm2(maxLoc); 
+enfMaxLoc = enfNorm2(maxLoc); 
 vecFramesMaxLoc = vecFrames2(maxLoc);
 
-% Ordenamiento de valores segun los valores normalizados de Gauss
-[~, indicesMaxLocOrd] = sort(gaussMaxLoc,'descend');
-
-NVal = 15;
-% Nos quedamos con los N elementos mas grandes
-maxFramesLocales = vecFramesMaxLoc(indicesMaxLocOrd(1:NVal));
-
 % Seleccion primaria
-aux = zeros(framesNo,1);
-aux(vecFramesMaxLoc(gaussNorm(vecFramesMaxLoc)>= 0.7)) = 1;
+% aux = zeros(framesNo,1);
+aux = zeros(size(frameSelected(:,3)));
+aux(vecFramesMaxLoc(enfNorm(vecFramesMaxLoc)>= 0.70)) = 1;
 frameSelected(:,4) = aux;
 
-% Armamos valores que necesitamos
-aux = zeros(framesNo,1);
-aux(maxFramesLocales) = 1;
-frameSelected(:,5) = aux;
-
-if(nnz(frameSelected(:,4)) < nnz(frameSelected(:,5)))
-    frameSelected(:,4) = frameSelected(:,5);
-end
+fprintf(' -- Num de seleccion final: %i/%i \n',...
+    nnz(frameSelected(:,4)),nnz(frameSelected(:,3)));
 
 save(pathMetadatos,'frameSelected',...
-    'frecGauss','gaussNorm','-append');
+    'enfoque','enfNorm','enfNorm2','vecFrames','vecFrames2','-append');
 
-%% Mostramos los valores frecuenciales
-close all;
+%% Graficacion de Valores de Enfoque
 
-% Obtenemos la resolucion de pantalla
-screenReso = get(0,'screensize'); 
-
-figure('Name', 'Valores de puntaje');
-
-plot(vecFrames2,gaussNorm2);
-hold on; plot(vecFrames2, 0.70 * ones(size(vecFrames2)));
+figure('Name', 'Valores de puntaje enfoque');
+plot(vecFrames2,enfNorm2);
+hold on; plot(vecFrames2, 0.75 * ones(size(vecFrames2)));
 hold on; plot(vecFrames(frameSelected(:,4)), ...
-    gaussNorm(frameSelected(:,4)),'c*' );
+    enfNorm(frameSelected(:,4)),'c*' );
 title 'Gauss';
 ylim([0 1.1])
+fprintf('Cuadros seleccionados')
+vecFrames(frameSelected(:,4))
 
-%% Valores HSV
-
-% Obtenemos la resolucion de pantalla
-screenReso = get(0,'screensize'); 
-
-% Configuramos la posicion de la figura y la tabla
-set(gcf,'OuterPosition',[0 0 ...
-    screenReso(3) screenReso(4)]);
-set(uiTablaHSV,'OuterPosition',[screenReso(3)*0.05 screenReso(4)*0.05 ...
-    screenReso(3)*0.9 screenReso(4)*0.83]);
+%% Graficacion de Valores HSV
 
 figure('Name', 'Valores de clasificacion HSV');
-plot(vecFrames,clasHSV(frameIni:frameFin));
+plot(vecFrames,clasHSV);
 title 'HSV 1';
 
 %% ======================= Remocion artefactos ========================== 
@@ -291,33 +286,6 @@ fprintf(' ======= %s - Remocion artefactos completa ========\n',...
     horaminseg())
 close(barraWait);
 
-%% ============ Enmascaramiento de imagenes de fondo retinal =============
-
-load(pathMetadatos);
-barraWait = waitbar(0,'Enmascaramiento');
-frameIni = 1; frameFin = framesNo;
-for iFrame = frameIni:frameFin
-    pathSalida = fullfile(folderName,sprintf('MascaraHSV_%i.jpg',iFrame)); 
-    if(frameSelected(iFrame,4) == 1)
-        % Lectura de imagen
-        pathImagen = ...
-            fullfile(folderName,sprintf('ImagenModif_%i.jpg',iFrame));
-        imRGB = im2double(imread(pathImagen));
-        % Extreaemos las mascaras
-        [mascaraCirc] = ...
-                enmascararcirculo(imRGB,posCent(iFrame,:),radio(iFrame));
-        [mascaraHSV,~] = ...
-            clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
-        % Guardamos la imagen
-        imwrite(mascaraHSV.*mascaraCirc,pathSalida);    
-    end
-    % Cambio en la barra de progreso
-    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
-end
-
-fprintf(' ======= %s - Enmascaramiento completo ========\n',horaminseg())
-close(barraWait);
-
 %% ======================= Mapeo de Vasos ==========================
 load(pathMetadatos);
 barraWait = waitbar(0,'Mapeo de vasos');
@@ -327,7 +295,14 @@ end
 tic;
 frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
-    pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame)); 
+    pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame));
+        pathMosaico =  fullfile(folderName,...
+        './Imagenes_Mosaico',sprintf('Vasos_%i.jpg',iFrame));
+
+    if(exist(fullfile(folderName,'./Imagenes_Mosaico'), 'dir') == 0)
+        mkdir(fullfile(folderName,'./Imagenes_Mosaico'));
+    end
+    
     if(frameSelected(iFrame,4) == 1)
         % Lectura de imagen
         pathImagen = fullfile(folderName,...
@@ -336,52 +311,96 @@ for iFrame = frameIni:frameFin
         mascBin = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
         % Creamos el mapa de vasos
-        [imModif] = ...
+        imModif = ...
             resaltarvasos(imRGB,...
             posCent(iFrame,:),radio(iFrame));
-        
-        % Strel de disco para comparacion con la funcion imclose
-        se = strel('disk',40);
-        mascBinModif = imclose(mascBin,se);
-        se = strel('disk',40);
-        mascBinModif = imerode(mascBinModif,se);
-        
-        % Guardamos la imagen 
-        imModif2 = imModif.*mascBinModif;
+        mascBinModif = cerrayerocionarmascara(mascBin,40,40);
+
+        % Guardamos la imagen
         CON_FONDO = 1;
-        [imModif2, posiciones(iFrame,:,:)] = ...
-            recortelupa(imModif2 ,...
-            posCent(iFrame,:), radio(iFrame),CON_FONDO);
+        [imModif, posiciones(iFrame,:,:)] = ...
+            recortelupa(imModif ,...
+            posCent(iFrame,:), radio(iFrame),SIN_FONDO);
+        [mascBinModif,~] = ...
+            recortelupa(mascBinModif,...
+            posCent(iFrame,:),radio(iFrame),SIN_FONDO);
+        imModif2 = imModif.*mascBinModif;
         
         % Normalizacion a valores de intensidad entre 0 y 1
         valorMax = max(imModif2(:));
         valorMin = min(imModif2(:));
         imModif2 = (imModif2-valorMin)./(valorMax-valorMin);
-        imadjust(imModif2);
+        
+        % Normalizacion a valores de intensidad entre 0 y 1
+        valorMax = max(imModif(:));
+        valorMin = min(imModif(:));
+        imModif = (imModif-valorMin)./(valorMax-valorMin);
+        
+        imwrite(imadjust(imModif),pathSalida);
+        
+        imwrite(imadjust(imModif2),pathMosaico);
+    end
 
-        imwrite(imModif2,pathSalida);
-    end
-    if(exist(fullfile(folderName,'./Imagenes_Mosaico'), 'dir') == 0)
-       mkdir(fullfile(folderName,'./Imagenes_Mosaico')); 
-    end
-    
-    pathMosaico =  fullfile(folderName,...
-        './Imagenes_Mosaico',sprintf('Vasos_%i.jpg',iFrame)); 
-    pathBin=  fullfile(folderName,...
-        './Imagenes_Mosaico',sprintf('ImBinario_%i.jpg',iFrame)); 
-    if(frameSelected(iFrame,5) == 1)
-       imwrite(imModif2,pathMosaico);
-       imBinaria = imbinarize(imModif2,0.15);
-       imwrite(imBinaria,pathBin);
-    end
-    
     % Cambio en la barra de progreso
-    waitbar((iFrame-frameIni)/(frameFin-frameIni)); 
+    waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
 toc;
 fprintf(' ======= %s - Mapeo de vasos completado ========\n',...
     horaminseg());
 close(barraWait);
+
+%% ================= Resaltado de imagenes imagenes ======================
+
+barraWait = waitbar(0,'Resaltado de Imagen');
+frameIni = 1; frameFin = framesNo;
+for iFrame = frameIni:frameFin
+    if(frameSelected(iFrame,4)== 1)
+        % Path de la imagen
+        pathImagen = fullfile(folderName,...
+            sprintf('ImagenModif_%i.jpg',iFrame));
+        pathVasos = fullfile(folderName,...
+            sprintf('Vasos_%i.jpg',iFrame));
+        pathSalida = fullfile(folderName,...
+            sprintf('ImagenFinal_%i.jpg',iFrame));
+        % Lectura de imagen
+        imRGB = im2double(imread(pathImagen));
+        imVasos = im2double(imread(pathVasos));
+        
+        posX1 = posiciones(iFrame,1,1);
+        posX2 = posiciones(iFrame,1,2);
+        posY1 = posiciones(iFrame,2,1);
+        posY2 = posiciones(iFrame,2,2);
+        
+        [imVerde] = enmascararcirculo(imRGB(:,:,2),...
+            posCent(iFrame,:),radio(iFrame));
+        imVerdeRecort = imVerde(posY1:posY2,posX1:posX2);
+        imVerdeMod = imadjust(abs(imVerdeRecort-0.35*imVasos));
+        
+        for iFilas = 1:size(imVerdeMod,1)
+            for jColum = 1:size(imVerdeMod,2)
+                if( (iFilas+posY1-1-posCent(iFrame,2) )^2 +...
+                        (jColum+posX1-1-posCent(iFrame,1))^2 > ...
+                        (radio(iFrame)*0.95)^2)
+                    imVerdeMod(iFilas,jColum) = ...
+                        imRGB(iFilas+posY1-1,jColum+posX1-1,2);
+                end
+            end
+        end
+        
+        imFinal = imRGB;
+        imFinal(posY1:posY2,posX1:posX2,2) = imVerdeMod;
+        imwrite(imFinal,pathSalida);
+    end
+    
+    % Cambio en la barra de progreso
+    waitbar((iFrame-frameIni)/(frameFin-frameIni));
+end
+
+fprintf(' ======= %s - Mapeo de vasos completado ========\n',...
+    horaminseg());
+close(barraWait);
+
+
 
 %% Creacion de video apartir de imagenes
 
@@ -394,47 +413,34 @@ open(outputVideo)
 % Se recorre la secuencia de imágenes, cargue cada imagen y luego 
 % escribirla en el vídeo.
 iFrame = 1;
-repetido = 1;
-numRep = outputVideo.FrameRate * 2.5;
-barraWait = waitbar(0,'Video de salida');
+repeticiones = 1; % Indica num de veces que se repitio
+numMaxRep = round(outputVideo.FrameRate * 1.5); % maximo de rep
+
+% Inicializacion barra de proceso
+barraWait = waitbar(0,'Video de salida'); 
 
 while(iFrame <= framesNo)
-    if(frameSelected(iFrame,4)== 1)
-        if (repetido == 1)
-            % Path de la imagen
+    if(frameSelected(iFrame,4)== 1) % Cuadros seleccionados se repiten
+        if (repeticiones == 1)  % Si es la primera vez
             pathImagen = fullfile(folderName,...
-                sprintf('ImagenModif_%i.jpg',iFrame));
-            pathVasos = fullfile(folderName,...
-                sprintf('Vasos_%i.jpg',iFrame));
-            % Lectura de imagen
-            imRGB = im2double(imread(pathImagen));
-            imVasosRecort = im2double(imread(pathVasos));
-            imVasos = zeros(size(imRGB,1),size(imRGB,2));
-            
-            posX1 = posiciones(iFrame,1,1);
-            posX2 = posiciones(iFrame,1,2);
-            posY1 = posiciones(iFrame,2,1);
-            posY2 = posiciones(iFrame,2,2);
-            
-            imVasos(posY1:posY2,posX1:posX2,:) = imVasosRecort;
-            
-            imFinal = imRGB;
-            imFinal(:,:,2) = imadjust(abs(imRGB(:,:,2)-0.3*imVasos));
-            repetido = 2;
-        elseif(repetido == numRep)% Si ya se repitio
+                sprintf('ImagenFinal_%i.jpg',iFrame));
+            repeticiones = 2;
+        elseif(repeticiones >= numMaxRep) % Alcanza la condicion
             iFrame = iFrame + 1;
-            repetido = 1;
+            repeticiones = 1;
         else
-            repetido = repetido + 1;
+            repeticiones = repeticiones + 1; % Aumenta contador
         end
-        writeVideo(outputVideo,imFinal);
+        
     else
+        % No se repite este frame
         pathImagen = fullfile(folderName,...
             sprintf('Image_%i.jpg',iFrame));
         iFrame = iFrame + 1;
-        imRGB = im2double(imread(pathImagen));
-        writeVideo(outputVideo,imRGB);
     end
+    % Se escribe el cuadro en el video
+    imSalida = im2double(imread(pathImagen));
+    writeVideo(outputVideo,imSalida);
     
     % Cambio en la barra de progreso
     waitbar(iFrame/framesNo)

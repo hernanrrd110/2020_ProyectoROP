@@ -147,17 +147,21 @@ panoramaView = imref2d([height width], xLimits, yLimits);
 % Create the panorama.
 
 % Transform I into the panorama.
-warpedImage = imwarp(imGray1, affine2d(eye(3)), 'OutputView', panoramaView);
+warpedImage = imwarp(imGray1, affine2d(eye(3)), 'OutputView', ...
+    panoramaView,'SmoothEdges',true);
 
-mask = imwarp(mascBin1,affine2d(eye(3)),'OutputView', panoramaView);
+mask = imwarp(mascBin1,affine2d(eye(3)),'OutputView', panoramaView,...
+    'SmoothEdges',true);
 
 % Overlay the warpedImage onto the panorama.
 panorama = blender.step(panorama, warpedImage,mask);
 
 % Transform I into the panorama.
-warpedImage = imwarp(imGray2, tforms, 'OutputView', panoramaView);
+warpedImage = imwarp(imGray2, tforms, 'OutputView', panoramaView,...
+    'SmoothEdges',true);
 
-mask = imwarp(mascBin2,tforms,'OutputView', panoramaView);
+mask = imwarp(mascBin2,tforms,'OutputView', panoramaView,...
+    'SmoothEdges',true);
 
 % Overlay the warpedImage onto the panorama.
 panorama = blender.step(panorama, warpedImage,mask);

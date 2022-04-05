@@ -1,4 +1,4 @@
-function [] = extraerframes(vidObj,...
+function [frameFinExtraido] = extraerframes(vidObj,...
     frameIni,frameFin,folderFrames,resolucionSalida,select)
 %EXTRAERFRAMES extraer frames desde los limites dados con factor de escala
 %con o sin submuestreo.
@@ -30,36 +30,37 @@ vidObj.CurrentTime = frameIni/vidObj.FrameRate;
 
 % Recorrido del video para extraccion de frames
 iFrame = frameIni;
-endTime = frameFin/vidObj.FrameRate; % Tiempo de finalizacion
 barraWait = waitbar(0,'Extracción de Frames');
 
 % Datos para guardar en metadatos
 vidName = strcat(name,ext);
-frameSelected = zeros(round(vidObj.Duration*vidObj.FrameRate),1,'logical');
 frameRate = vidObj.FrameRate;
+frameSelected = zeros(round(vidObj.Duration*frameRate),1,'logical');
 
-while vidObj.CurrentTime <= endTime % Inicio while
-    vidFrame = readFrame(vidObj);
-    pathCompleto = fullfile(folderFrames,sprintf('Image_%i.jpg',iFrame));
-    if (~isfile(pathCompleto)) % Inicio if 1 (Pregunta si no hay archivo)
-        if (select == SUBMUESTREO) % Inicio if 2
-            if (mod(iFrame,2)~= 0) % Inicio if 3
-                % Solo se seleccionan los frames impares
-                frameSelected(iFrame) = 1;
-            end % Fin If 3
-        elseif(select == SIN_SUBMUESTREO) % Inicio elseif 2
+for iFrame = frameIni:frameFin
+    if (hasFrame(vidObj))
+        vidFrame = readFrame(vidObj);
+        pathCompleto = fullfile(folderFrames,...
+            sprintf('Image_%i.jpg',iFrame));
+        % Caso de submuestro
+        if (select == SUBMUESTREO && ( mod(iFrame,2)~= 0) )
+            % Solo se seleccionan los frames impares
             frameSelected(iFrame) = 1;
-        end % ====== Fin If 2
-    else
-        frameSelected(iFrame) = 1;
-    end % Fin if 1
-    vidFrame = imresize(vidFrame,resolucionSalida);
-    imwrite(vidFrame,pathCompleto);
-    iFrame = iFrame + 1;
+            % Caso sin submuestro
+        elseif(select == SIN_SUBMUESTREO)
+            frameSelected(iFrame) = 1;
+        end
+        % En caso de que el archivo ya exista, no escribir
+        if (~isfile(pathCompleto))
+            vidFrame = imresize(vidFrame,resolucionSalida);
+            imwrite(vidFrame,pathCompleto);
+        end
+    end
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
-end % Fin while
-close(barraWait);
+end % Fin for
 
+close(barraWait);
+frameFinExtraido = iFrame;
 % Guardado de metadatos
 pathMetadatos = fullfile(folderFrames,'metadatos.mat');
 if(exist(pathMetadatos,'file') == 0)

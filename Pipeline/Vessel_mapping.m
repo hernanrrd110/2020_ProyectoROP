@@ -69,12 +69,7 @@ for iFilas = 1:size(imCort,1)
 end
 
 % % Normalizacion a valores de intensidad entre 0 y 1
-% imLoGMax(imLoGMax<0) = 0;
-    
-valorMax = max(imLoGMax(:));
-valorMin = min(imLoGMax(:));
-imLoGMax = (imLoGMax-valorMin)./(valorMax-valorMin);
-% imLoGMax = imLoGMax .*mascaraHSV;
+
 % ------ Graficacion
 f = figure('Name', 'Filtrado LoG con respuesta maxima');
 imshow(imLoGMax,[]); title('Escala Grises filtrada LoG');
@@ -117,17 +112,20 @@ end
 [mascaraHSV] = enmascarhsv(rgb2hsv(imCortRGB));
 imGaborMax = imGaborMax .*mascaraHSV;
 
-% Normalizacion a valores de intensidad entre 0 y 1
-valorMax = max(imGaborMax(:));
-valorMin = min(imGaborMax(:));
-imGaborMax = (imGaborMax-valorMin)./(valorMax-valorMin);
-
 %imCort = imCort .*mascaraHSV;
 
 % ------ Graficacion
 f = figure('Name','Filtrado Gabor con respuesta maxima');
-imshow(imGaborMax); title('Respuesta en Magnitud Gabor');
+imshow(imGaborMax,[]); title('Respuesta en Magnitud Gabor');
 
+mascaraHSV2 = cerrayerocionarmascara(mascaraHSV,40,40);
+imFinal = imGaborMax.*mascaraHSV2;
 
+% Normalizacion a valores de intensidad entre 0 y 1
+valorMax = max(imFinal(:));
+valorMin = min(imFinal(:));
+imFinal = (imFinal-valorMin)./(valorMax-valorMin);
 
-
+% ------ Graficacion
+f = figure('Name','Filtrado Gabor cierre y erosion');
+imshow(imFinal ,[]); 
