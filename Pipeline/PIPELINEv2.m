@@ -56,6 +56,7 @@ load(pathMetadatos);
 fprintf(' ======= %s - Extraccion de frames completa ========\n',...
     horaminseg())
 
+
 % Se extrae frameSelected de metadatos, un array que indica los frames que
 % se seleccionaron para el procesamiento
 
@@ -84,7 +85,7 @@ for iFrame = frameIni:frameFin
         imRGB = im2double(imread(pathImagen));
 
         % Extramos la lupa
-        [imCort, aux1, aux2] = detectorlupa(imRGB,[460 560]);
+        [imCort, aux1, aux2] = detectorlupa(imRGB,[390 540]);
         if(~isempty(imCort)) 
             % Guardamos la imagen
 %             imwrite(imCort,pathLupa);
@@ -374,7 +375,7 @@ for iFrame = frameIni:frameFin
         [imVerde] = enmascararcirculo(imRGB(:,:,2),...
             posCent(iFrame,:),radio(iFrame));
         imVerdeRecort = imVerde(posY1:posY2,posX1:posX2);
-        imVerdeMod = imadjust(abs(imVerdeRecort-0.35*imVasos));
+        imVerdeMod = imadjust(abs(imVerdeRecort-0.15*imVasos));
         
         for iFilas = 1:size(imVerdeMod,1)
             for jColum = 1:size(imVerdeMod,2)
@@ -382,7 +383,7 @@ for iFrame = frameIni:frameFin
                         (jColum+posX1-1-posCent(iFrame,1))^2 > ...
                         (radio(iFrame)*0.95)^2)
                     imVerdeMod(iFilas,jColum) = ...
-                        imRGB(iFilas+posY1-1,jColum+posX1-1,2);
+                        0.9*imRGB(iFilas+posY1-1,jColum+posX1-1,2);
                 end
             end
         end
@@ -396,14 +397,13 @@ for iFrame = frameIni:frameFin
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
 
-fprintf(' ======= %s - Mapeo de vasos completado ========\n',...
+fprintf(' ======= %s - Resaltado de imagenes completado ========\n',...
     horaminseg());
 close(barraWait);
 
 
 
 %% Creacion de video apartir de imagenes
-
 % Se contruye un objeto VideoWriter, 
 % que crea un archivo AVI Motion-JPEG de forma predeterminada.
 

@@ -35,7 +35,8 @@ barraWait = waitbar(0,'Extracción de Frames');
 % Datos para guardar en metadatos
 vidName = strcat(name,ext);
 frameRate = vidObj.FrameRate;
-frameSelected = zeros(round(vidObj.Duration*frameRate),1,'logical');
+frameSelected = zeros(floor(vidObj.Duration*frameRate),1,'logical');
+frameFinExtraido = frameFin;
 
 for iFrame = frameIni:frameFin
     if (hasFrame(vidObj))
@@ -55,12 +56,14 @@ for iFrame = frameIni:frameFin
             vidFrame = imresize(vidFrame,resolucionSalida);
             imwrite(vidFrame,pathCompleto);
         end
+    else
+        frameFinExtraido = iFrame-1;
     end
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end % Fin for
 
 close(barraWait);
-frameFinExtraido = iFrame;
+
 % Guardado de metadatos
 pathMetadatos = fullfile(folderFrames,'metadatos.mat');
 if(exist(pathMetadatos,'file') == 0)

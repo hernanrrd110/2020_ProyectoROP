@@ -33,7 +33,7 @@ function [vidObj,framesNo] = ...
     end
     % Declaracion del objeto para manejar el video
     vidObj = VideoReader(pathVideo);
-    framesNo = round(vidObj.Duration*vidObj.FrameRate);
+    framesNo = floor(vidObj.Duration*vidObj.FrameRate);
 
 end
 
