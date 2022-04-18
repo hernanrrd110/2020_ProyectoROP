@@ -22,14 +22,14 @@ SIN_FONDO = 0;
 CON_FONDO = 1;
 
 % Declaracion del objeto para manejar el video
+nameVid = 'ID_69'; extVid = '.mp4';
 [vidObj, framesNo] = ...
-    cargarvideo(fullfile(cd,'./Frames_Videos/ID_67.mp4'));
+    cargarvideo(fullfile(cd,'./Frames_Videos',strcat(nameVid,extVid)));
 frameIni = 1; frameFin = framesNo;
 % --- Interfaz de usuario para elegir la carpeta de destino 
 % folderName = ...
 %     uigetdir('Introducir carperta de destino de extraccion de cuadros'); 
-folderName = './Frames_Videos/ID_67';
-folderName = fullfile(cd,folderName);
+folderName = fullfile(cd,'./Frames_Videos',nameVid);
 
 factorEscala = [1080 1920];
 
@@ -293,17 +293,22 @@ barraWait = waitbar(0,'Mapeo de vasos');
 if(exist('posiciones','var') == 0)
     posiciones = zeros(framesNo, 2, 2);
 end
-tic;
+% Carpeta de guardado de imagenes para mosaico
+folderMosaico = fullfile(folderName,'Imagenes_Mosaico');
+if(exist(folderMosaico,'dir') == 0)
+    mkdir(folderMosaico);
+end
+
 frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
+    % Rutas de guardado de imagenes
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame));
-        pathMosaico =  fullfile(folderName,...
-        './Imagenes_Mosaico',sprintf('Vasos_%i.jpg',iFrame));
-
-    if(exist(fullfile(folderName,'./Imagenes_Mosaico'), 'dir') == 0)
-        mkdir(fullfile(folderName,'./Imagenes_Mosaico'));
-    end
+    pathMosaico =  fullfile(folderMosaico,...
+        sprintf('Vasos_%i.jpg',iFrame));
+    pathMosaicoBin =  fullfile(folderMosaico,...
+        sprintf('MascVasos_%i.jpg',iFrame));
     
+    % Si el cuadro esta seleccionado
     if(frameSelected(iFrame,4) == 1)
         % Lectura de imagen
         pathImagen = fullfile(folderName,...
@@ -340,12 +345,12 @@ for iFrame = frameIni:frameFin
         imwrite(imadjust(imModif),pathSalida);
         
         imwrite(imadjust(imModif2),pathMosaico);
+        imwrite(mascBinModif,pathMosaicoBin);
     end
 
     % Cambio en la barra de progreso
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
-toc;
 fprintf(' ======= %s - Mapeo de vasos completado ========\n',...
     horaminseg());
 close(barraWait);
@@ -375,7 +380,7 @@ for iFrame = frameIni:frameFin
         [imVerde] = enmascararcirculo(imRGB(:,:,2),...
             posCent(iFrame,:),radio(iFrame));
         imVerdeRecort = imVerde(posY1:posY2,posX1:posX2);
-        imVerdeMod = imadjust(abs(imVerdeRecort-0.15*imVasos));
+        imVerdeMod = abs(imVerdeRecort-0.15*imVasos);
         
         for iFilas = 1:size(imVerdeMod,1)
             for jColum = 1:size(imVerdeMod,2)
@@ -383,14 +388,17 @@ for iFrame = frameIni:frameFin
                         (jColum+posX1-1-posCent(iFrame,1))^2 > ...
                         (radio(iFrame)*0.95)^2)
                     imVerdeMod(iFilas,jColum) = ...
-                        0.7*imRGB(iFilas+posY1-1,jColum+posX1-1,2);
+                        imRGB(iFilas+posY1-1,jColum+posX1-1,2);
                 end
             end
         end
         
         imFinal = imRGB;
         imFinal(posY1:posY2,posX1:posX2,2) = imVerdeMod;
-        imwrite(imFinal,pathSalida);
+        mascBin = enmascararcirculo(imFinal,...
+            posCent(iFrame,:),radio(iFrame));
+        mascBin = 0.4*(~mascBin)+ mascBin;
+        imwrite(imFinal.*mascBin,pathSalida);
     end
     
     % Cambio en la barra de progreso
@@ -402,13 +410,12 @@ fprintf(' ======= %s - Resaltado de imagenes completado ========\n',...
 close(barraWait);
 
 
-
 %% Creacion de video apartir de imagenes
 % Se contruye un objeto VideoWriter, 
 % que crea un archivo AVI Motion-JPEG de forma predeterminada.
 
 outputVideo = VideoWriter(fullfile(folderName,'videoSalida.avi'));
-outputVideo.FrameRate = 2*frameRate;
+outputVideo.FrameRate = frameRate;
 open(outputVideo)
 % Se recorre la secuencia de imágenes, cargue cada imagen y luego 
 % escribirla en el vídeo.
@@ -431,16 +438,19 @@ while(iFrame <= framesNo)
         else
             repeticiones = repeticiones + 1; % Aumenta contador
         end
+        % Se escribe el cuadro en el video
+        imSalida = im2double(imread(pathImagen));
+        writeVideo(outputVideo,imSalida);
         
-    else
+    elseif(frameSelected(iFrame,1) == 1 && mod(iFrame,2) == 1)
         % No se repite este frame
         pathImagen = fullfile(folderName,...
             sprintf('Image_%i.jpg',iFrame));
+        % Se escribe el cuadro en el video
+        imSalida = im2double(imread(pathImagen));
+        writeVideo(outputVideo,imSalida);
         iFrame = iFrame + 1;
     end
-    % Se escribe el cuadro en el video
-    imSalida = im2double(imread(pathImagen));
-    writeVideo(outputVideo,imSalida);
     
     % Cambio en la barra de progreso
     waitbar(iFrame/framesNo)
