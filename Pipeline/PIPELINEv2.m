@@ -383,7 +383,7 @@ for iFrame = frameIni:frameFin
                         (jColum+posX1-1-posCent(iFrame,1))^2 > ...
                         (radio(iFrame)*0.95)^2)
                     imVerdeMod(iFilas,jColum) = ...
-                        0.9*imRGB(iFilas+posY1-1,jColum+posX1-1,2);
+                        0.7*imRGB(iFilas+posY1-1,jColum+posX1-1,2);
                 end
             end
         end
