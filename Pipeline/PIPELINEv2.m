@@ -450,6 +450,8 @@ while(iFrame <= framesNo)
         imSalida = im2double(imread(pathImagen));
         writeVideo(outputVideo,imSalida);
         iFrame = iFrame + 1;
+    else
+        iFrame = iFrame + 1;
     end
     
     % Cambio en la barra de progreso

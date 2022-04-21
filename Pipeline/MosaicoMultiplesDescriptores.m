@@ -108,19 +108,20 @@ tforms = estimateGeometricTransform(matchedBoth2,...
     'MaxNumTrials', 1000000);
 
 % Compute the output limits for each transform
-imageSize = size(imGray1);
-[xlim(1,:), ylim(1,:)] = outputLimits(affine2d(eye(3)), [1 imageSize(2)],...
-    [1 imageSize(1)]);
-imageSize = size(imGray2);
-[xlim(2,:), ylim(2,:)] = outputLimits(tforms, [1 imageSize(2)],...
-    [1 imageSize(1)]);
+imageSize1 = size(imGray1);
+imageSize2 = size(imGray2);
+[xlim(1,:), ylim(1,:)] = outputLimits(affine2d(eye(3)), [1 imageSize1(2)],...
+    [1 imageSize1(1)]);
+
+[xlim(2,:), ylim(2,:)] = outputLimits(tforms, [1 imageSize2(2)],...
+    [1 imageSize2(1)]);
 
 % Find the minimum and maximum output limits 
 xMin = min([1; xlim(:)]);
-xMax = max([imageSize(2); xlim(:)]);
+xMax = max([imageSize1(2);imageSize2(2); xlim(:)]);
 
 yMin = min([1; ylim(:)]);
-yMax = max([imageSize(1); ylim(:)]);
+yMax = max([imageSize1(1);imageSize2(1); ylim(:)]);
 
 % Width and height of panorama.
 width  = round(xMax - xMin);

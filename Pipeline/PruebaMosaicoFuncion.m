@@ -3,45 +3,26 @@ clear all; close all; clc;
 % Cargar las imagenes del mosaico
 addpath('./Funciones');
 addpath('./Imagenes');
+warning('off')
 
-[~,imGray1] = cargarimagen('Vasos_165.jpg');
-[~,imGray2] = cargarimagen('Vasos_819.jpg');
+nameVid = 'ID_69'; extVid = '.mp4';
+folderName = fullfile(cd,'./Frames_Videos',nameVid);
+folderMosaico = fullfile(folderName,'Imagenes_Mosaico');
 
-imGray1 = imadjust(imGray1);
-imGray2 = imadjust(imGray2);
+frame1 = 165;
+frame2 = 819;
 
-% Pathmetadatos
-pathMetadatos = fullfile(cd,'./Frames_Videos/ID_69/metadatos.mat');
-load(pathMetadatos);
+% Carga de imagenes
+[~,imGray1] = cargarimagen( fullfile(folderMosaico,...
+    sprintf('Vasos_%i.jpg',frame1) ) );
+[~,imGray2] = cargarimagen( fullfile(folderMosaico,...
+    sprintf('Vasos_%i.jpg',frame2) ) );
 
-% Creacion de mascaras
-imRGB1 = cargarimagen('ImagenModif_165.jpg');
-mascBin1 = clasificadorhsv(imRGB1,posCent(165,:), radio(165));
-% Strel de disco para comparacion con la funcion imclose
-se = strel('disk',40);
-mascBin1 = imclose(mascBin1,se);
-se = strel('disk',70);
-mascBin1 = imerode(mascBin1,se);
-CON_FONDO = 1;
-mascBin1 = recortelupa(mascBin1 ,...
-            posCent(165,:), radio(165),CON_FONDO); 
-imRGB1 = recortelupa(imRGB1 ,...
-    posCent(165,:), radio(165),CON_FONDO);
-
-imRGB2 = cargarimagen('ImagenModif_819.jpg');
-mascBin2 = clasificadorhsv(imRGB2,posCent(819,:), radio(819));
-% Strel de disco para comparacion con la funcion imclose
-se = strel('disk',40);
-mascBin2 = imclose(mascBin2,se);
-se = strel('disk',70);
-mascBin2 = imerode(mascBin2,se);
-mascBin2 = recortelupa(mascBin2 ,...
-    posCent(819,:), radio(819),CON_FONDO);
-imRGB2 = recortelupa(imRGB2 ,...
-    posCent(819,:), radio(819),CON_FONDO);
-% 
-imGray1 = imGray1.*mascBin1;
-imGray2 = imGray2.*mascBin2;
+% Carga de Mascaras
+[~,imMasc1] = cargarimagen( fullfile(folderMosaico,...
+    sprintf('MascVasos_%i.jpg',frame1) ) );
+[~,imMasc2] = cargarimagen( fullfile(folderMosaico,...
+    sprintf('MascVasos_%i.jpg',frame2) ) );
 
 % Parametros
 % Valores Decentes
@@ -62,19 +43,60 @@ imGray2 = imGray2.*mascBin2;
 % maxRatio = [0.5 0.7]; %MATCHING
 % metric = 'SAD';
 
+%  - Fig 22: corr 0.4710
+%   MaxRatio 0.7 0.8; Umbral Coinc 70 70 
+%   NumOctavas 3; Umbral Metrica 500;
+%   Min Contrast 0.01; Min Calidad 0.20; 
+
 numOctaves = 3; %SURF
-metricThreshold = 1000; %SURF
+metricThreshold = 500; %SURF
 minContrast = 0.01; % BRISK
 minQuality = 0.2; % BRISK
-matchThreshold = [60 60]; %MATCHING
-maxRatio = [0.5 0.7]; %MATCHING
-metric = 'SAD';
+matchThreshold = [70 70]; %MATCHING
+maxRatio = [0.7 0.8]; %MATCHING
+metric = 'SSD';
 
-[panorama,mascPan,tforms] = mosaicomultidesc(imGray1,imGray2,...
-    mascBin1,mascBin2,numOctaves,metricThreshold,...
+[~,~,tforms,mosRef] = mosaicomultidesc(imGray1,imGray2,...
+    imMasc1,imMasc2,numOctaves,metricThreshold,...
     minContrast,minQuality,...
     matchThreshold,maxRatio,metric);
 
-imshow(panorama);
-imwrite(panorama, fullfile(cd,'./Imagenes','Mosaico1.jpg'))
-imwrite(mascPan,fullfile(cd,'./Imagenes','MascaraMosaico1.jpg'))
+% imagenes transformadas para compararlas
+imWarp1 = imwarp(imGray1, affine2d(eye(3)), ...
+    'OutputView', mosRef);
+imWarp2 = imwarp(imGray2, tforms, ...
+    'OutputView', mosRef);
+
+f = figure(); imshowpair(imWarp1, imWarp2);
+%%
+% Nonrigid registration
+[displacementField,imWarp2Mod] = ...
+    imregdemons(imWarp2,imWarp1,1000,...
+    'AccumulatedFieldSmoothing',1.0,'PyramidLevels',2);
+
+f = figure(); imshowpair(imWarp1, imWarp2Mod);
+
+%%
+imMasc2Mod = imWarp2Mod;
+imMasc2Mod(imMasc2Mod >0) = 1;
+se = strel('disk',10);
+imMasc2Mod = imclose(imMasc2Mod,se);
+imMasc1Mod = imwarp(imMasc1, affine2d(eye(3)),...
+    'OutputView', mosRef);
+
+% Initialize the "empty" panorama.
+% mosaic = zeros(mosRef.ImageSize, 'like', imGray1);
+mosaic = imWarp1;
+restaMasc = imMasc2Mod-imMasc1Mod;
+restaMasc(restaMasc < 0) = 0;
+restaMasc = logical(restaMasc);
+mosaic(restaMasc) = imWarp2Mod(restaMasc);
+
+
+% mosaic = blender.step(mosaic, imWarp2Mod,imMasc2Mod);
+% mosaic = blender.step(mosaic, imWarp1,imMasc1Mod);
+% 
+% f = figure(); imshow(mosaic);
+
+% imwrite(mosaic, fullfile(cd,'./Imagenes','Mosaico1.jpg'))
+% imwrite(mascPan,fullfile(cd,'./Imagenes','MascaraMosaico1.jpg'))
