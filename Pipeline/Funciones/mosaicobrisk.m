@@ -82,12 +82,12 @@ imWarp1 = imwarp(imGray1, affine2d(eye(3)), ...
     'OutputView', mosRef,...
     'SmoothEdges',true);
 imMascWarp1 = imwarp(mascBin1,affine2d(eye(3)),...
-    'OutputView', mosRef,...
-    'SmoothEdges',true);
+    'OutputView', mosRef,'Interp','nearest');
 
 % Transform II into the panorama.
 imWarp2 = imwarp(imGray2, tforms, 'OutputView', mosRef);
-imMascWarp2 = imwarp(mascBin2,tforms,'OutputView', mosRef);
+imMascWarp2 = imwarp(mascBin2,tforms,'OutputView', mosRef,...
+    'Interp','nearest');
 
 % Nonrigid registration
 if(selectNonRigid)
@@ -96,13 +96,17 @@ if(selectNonRigid)
         'AccumulatedFieldSmoothing',param.AccumulatedFieldSmoothing,...
         'PyramidLevels',param.PyramidLevels);
     % Transform II into the panorama.
-    imMascWarp2 = imwarp(imMascWarp2,dispField,...
-        'SmoothEdges',true);
+    imMascWarp2 = imwarp(imMascWarp2,dispField,'Interp','nearest');
 end
 
 % Crear mosaico, imagenes y mascaras
 % Initialize the "empty" panorama.
+imWarp2 = imhistmatch(imWarp2,imWarp1);
 mosaic = imWarp1;
+imMascWarp1(imMascWarp1<0.5) = 0;
+imMascWarp2(imMascWarp2<0.5) = 0;
+imMascWarp1(imMascWarp1>=0.5) = 1;
+imMascWarp2(imMascWarp2>=0.5) = 1;
 restaMasc = imMascWarp2-imMascWarp1;
 restaMasc(restaMasc < 0) = 0;
 restaMasc = logical(restaMasc);

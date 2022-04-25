@@ -22,7 +22,7 @@ SIN_FONDO = 0;
 CON_FONDO = 1;
 
 % Declaracion del objeto para manejar el video
-nameVid = 'ID_69'; extVid = '.mp4';
+nameVid = 'ID_199'; extVid = '.mov';
 [vidObj, framesNo] = ...
     cargarvideo(fullfile(cd,'./Frames_Videos',strcat(nameVid,extVid)));
 frameIni = 1; frameFin = framesNo;
@@ -64,7 +64,7 @@ fprintf(' ======= %s - Extraccion de frames completa ========\n',...
 load(pathMetadatos);
 warning('off');
 barraWait = waitbar(0,'Deteccion Lupa');
-frameIni = 1; frameFin = frameFinExtraido;
+frameIni = 1; frameFin = framesNo;
 % Seleccion de frames correspondientes a la segunda etapa
 % Si no detecta lupa, no se toma en cuenta el frame
 
@@ -85,7 +85,7 @@ for iFrame = frameIni:frameFin
         imRGB = im2double(imread(pathImagen));
 
         % Extramos la lupa
-        [imCort, aux1, aux2] = detectorlupa(imRGB,[390 540]);
+        [imCort, aux1, aux2] = detectorlupa(imRGB,[350 470]);
         if(~isempty(imCort)) 
             % Guardamos la imagen
 %             imwrite(imCort,pathLupa);
@@ -149,7 +149,7 @@ if(exist('clasHSV','var') == 0)
 end
 
 barraWait = waitbar(0,'Clasificacion HSV');
-
+umbralHSV = 0.4;
 for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,2) == 1) % Si el frame fue seleccionado
         pathLupa = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
@@ -160,7 +160,7 @@ for iFrame = frameIni:frameFin
         [~,clasHSV(iFrame)] = ...
             clasificadorhsv(imRGB,posCent(iFrame,:), radio(iFrame));
         
-        if(clasHSV(iFrame)<=0.4)
+        if(clasHSV(iFrame)<umbralHSV)
             frameSelected(iFrame,3) = 0;
         else
             frameSelected(iFrame,3) = 1;
@@ -232,8 +232,9 @@ vecFramesMaxLoc = vecFrames2(maxLoc);
 
 % Seleccion primaria
 % aux = zeros(framesNo,1);
+umbralEnfoque = 0.7;
 aux = zeros(size(frameSelected(:,3)));
-aux(vecFramesMaxLoc(enfNorm(vecFramesMaxLoc)>= 0.70)) = 1;
+aux(vecFramesMaxLoc(enfNorm(vecFramesMaxLoc)>= umbralEnfoque)) = 1;
 frameSelected(:,4) = aux;
 
 fprintf(' -- Num de seleccion final: %i/%i \n',...
@@ -246,7 +247,7 @@ save(pathMetadatos,'frameSelected',...
 
 figure('Name', 'Valores de puntaje enfoque');
 plot(vecFrames2,enfNorm2);
-hold on; plot(vecFrames2, 0.75 * ones(size(vecFrames2)));
+hold on; plot(vecFrames2, umbralEnfoque * ones(size(vecFrames2)));
 hold on; plot(vecFrames(frameSelected(:,4)), ...
     enfNorm(frameSelected(:,4)),'c*' );
 title 'Gauss';
@@ -305,6 +306,8 @@ for iFrame = frameIni:frameFin
     pathSalida = fullfile(folderName,sprintf('Vasos_%i.jpg',iFrame));
     pathMosaico =  fullfile(folderMosaico,...
         sprintf('Vasos_%i.jpg',iFrame));
+    pathMosaicoRGB =  fullfile(folderMosaico,...
+        sprintf('VasosRGB_%i.jpg',iFrame));
     pathMosaicoBin =  fullfile(folderMosaico,...
         sprintf('MascVasos_%i.jpg',iFrame));
     
@@ -342,9 +345,19 @@ for iFrame = frameIni:frameFin
         valorMin = min(imModif(:));
         imModif = (imModif-valorMin)./(valorMax-valorMin);
         
+        posX1 = posiciones(iFrame,1,1);
+        posX2 = posiciones(iFrame,1,2);
+        posY1 = posiciones(iFrame,2,1);
+        posY2 = posiciones(iFrame,2,2);
+        
+        
+        imModifRGB = imRGB(posY1:posY2,posX1:posX2,:).*mascBinModif;
+        imModifRGB(:,:,2) = abs(imModifRGB(:,:,2)-0.15*imModif2); 
+        
         imwrite(imadjust(imModif),pathSalida);
         
         imwrite(imadjust(imModif2),pathMosaico);
+        imwrite(imModifRGB,pathMosaicoRGB);
         imwrite(mascBinModif,pathMosaicoBin);
     end
 

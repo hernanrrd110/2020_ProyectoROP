@@ -8,8 +8,8 @@ nameVid = 'ID_69';
 folderName = fullfile(cd,'./Frames_Videos',nameVid);
 folderMosaico = fullfile(folderName,'Imagenes_Mosaico');
 
-frame1 = 1;
-frame2 = 819;
+frame1 = 2;
+frame2 = 1205;
 
 nombreImFija = sprintf('Mosaico_%i.jpg',frame1);
 nombreImMovil = sprintf('Vasos_%i.jpg',frame2);
@@ -29,9 +29,9 @@ nombreImMovil = sprintf('Vasos_%i.jpg',frame2);
 param.NumOctaves = 3;
 param.Upright = false;
 iter = 1;
-for minContrast = [0.05 0.075 0.1]
+for minContrast = [0.05 0.075 0.1 0.15]
     for minQuality = [0.10 0.15 0.20]
-        for maxRatio = [0.3 0.5 0.7]
+        for maxRatio = [0.5 0.7 0.8]
             for matchThreshold = [50 60 70]
                 try
                     param.MinContrast = minContrast;
