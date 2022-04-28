@@ -22,7 +22,7 @@ SIN_FONDO = 0;
 CON_FONDO = 1;
 
 % Declaracion del objeto para manejar el video
-nameVid = 'ID_199'; extVid = '.mov';
+nameVid = 'ID_323'; extVid = '.mov';
 [vidObj, framesNo] = ...
     cargarvideo(fullfile(cd,'./Frames_Videos',strcat(nameVid,extVid)));
 frameIni = 1; frameFin = framesNo;
@@ -85,7 +85,7 @@ for iFrame = frameIni:frameFin
         imRGB = im2double(imread(pathImagen));
 
         % Extramos la lupa
-        [imCort, aux1, aux2] = detectorlupa(imRGB,[350 470]);
+        [imCort, aux1, aux2] = detectorlupa(imRGB,[420 570]);
         if(~isempty(imCort)) 
             % Guardamos la imagen
 %             imwrite(imCort,pathLupa);
@@ -120,7 +120,6 @@ for iFrame = frameIni:frameFin
         % Creando la ruta del archivo de imagen
         pathImagen = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
         pathLupa2 = fullfile(folderName,sprintf('Lupa2_%i.jpg',iFrame));
-        
         % Cargar imagen
         imRGB = im2double(imread(pathImagen));
         % Recorte de Lupa 2
@@ -128,8 +127,7 @@ for iFrame = frameIni:frameFin
             enmascararcirculo(imRGB,posCent(iFrame,:),radioMin);
         [mascaraCirc, ~] = ...
         recortelupa(mascaraCirc ,...
-                posCent(iFrame,:), radioMin,CON_FONDO);
-            
+                posCent(iFrame,:), radioMin,CON_FONDO);   
         % Guardamos la imagen
         imwrite(mascaraCirc,pathLupa2);
         waitbar((iFrame-frameIni)/(frameFin-frameIni));
@@ -138,6 +136,7 @@ for iFrame = frameIni:frameFin
 end
 fprintf(' ======= %s - Segundo Recorte Lupa completado ========\n',...
     horaminseg())
+save(pathMetadatos,'radioMin','-append');
 close(barraWait);
 %% ======================== Clasificacion HSV ===========================
 load(pathMetadatos);
@@ -173,8 +172,8 @@ fprintf(' ======= %s - Clasificacion HSV completa ========\n',...
     horaminseg())
 fprintf(' -- Num de clasificaciones: %i/%i \n',...
     nnz(frameSelected(:,3)),nnz(frameSelected(:,2)));
-close(barraWait);
 
+close(barraWait);
 save(pathMetadatos,'frameSelected','clasHSV','-append');
 
 %% ===================== Clasificacion de enfoque =======================
@@ -232,7 +231,7 @@ vecFramesMaxLoc = vecFrames2(maxLoc);
 
 % Seleccion primaria
 % aux = zeros(framesNo,1);
-umbralEnfoque = 0.7;
+umbralEnfoque = 0.77;
 aux = zeros(size(frameSelected(:,3)));
 aux(vecFramesMaxLoc(enfNorm(vecFramesMaxLoc)>= umbralEnfoque)) = 1;
 frameSelected(:,4) = aux;
@@ -242,8 +241,6 @@ fprintf(' -- Num de seleccion final: %i/%i \n',...
 
 save(pathMetadatos,'frameSelected',...
     'enfoque','enfNorm','enfNorm2','vecFrames','vecFrames2','-append');
-
-%% Graficacion de Valores de Enfoque
 
 figure('Name', 'Valores de puntaje enfoque');
 plot(vecFrames2,enfNorm2);
@@ -323,7 +320,7 @@ for iFrame = frameIni:frameFin
         imModif = ...
             resaltarvasos(imRGB,...
             posCent(iFrame,:),radio(iFrame));
-        mascBinModif = cerrayerocionarmascara(mascBin,40,40);
+        mascBinModif = cerrayerocionarmascara(mascBin,100,20);
 
         % Guardamos la imagen
         CON_FONDO = 1;
@@ -344,12 +341,10 @@ for iFrame = frameIni:frameFin
         valorMax = max(imModif(:));
         valorMin = min(imModif(:));
         imModif = (imModif-valorMin)./(valorMax-valorMin);
-        
         posX1 = posiciones(iFrame,1,1);
         posX2 = posiciones(iFrame,1,2);
         posY1 = posiciones(iFrame,2,1);
         posY2 = posiciones(iFrame,2,2);
-        
         
         imModifRGB = imRGB(posY1:posY2,posX1:posX2,:).*mascBinModif;
         imModifRGB(:,:,2) = abs(imModifRGB(:,:,2)-0.15*imModif2); 
@@ -366,6 +361,8 @@ for iFrame = frameIni:frameFin
 end
 fprintf(' ======= %s - Mapeo de vasos completado ========\n',...
     horaminseg());
+
+save(pathMetadatos,'posiciones','-append');
 close(barraWait);
 
 %% ================= Resaltado de imagenes imagenes ======================
@@ -381,9 +378,11 @@ for iFrame = frameIni:frameFin
             sprintf('Vasos_%i.jpg',iFrame));
         pathSalida = fullfile(folderName,...
             sprintf('ImagenFinal_%i.jpg',iFrame));
+        pathSalida2 = fullfile(folderName,...
+            sprintf('ImagenFinal2_%i.jpg',iFrame));
         % Lectura de imagen
         imRGB = im2double(imread(pathImagen));
-        imVasos = im2double(imread(pathVasos));
+        imVasos = im2double(imread(pathVasos)); 
         
         posX1 = posiciones(iFrame,1,1);
         posX2 = posiciones(iFrame,1,2);
@@ -411,7 +410,11 @@ for iFrame = frameIni:frameFin
         mascBin = enmascararcirculo(imFinal,...
             posCent(iFrame,:),radio(iFrame));
         mascBin = 0.4*(~mascBin)+ mascBin;
+        imFinal2 = imFinal(posY1:posY2,posX1:posX2,:)...
+            .*mascBin(posY1:posY2,posX1:posX2);
+        
         imwrite(imFinal.*mascBin,pathSalida);
+        imwrite(imFinal2,pathSalida2);
     end
     
     % Cambio en la barra de progreso
