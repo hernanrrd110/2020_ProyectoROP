@@ -3,13 +3,18 @@ function [frameFinExtraido] = extraerframes(vidObj,...
 %EXTRAERFRAMES extraer frames desde los limites dados con factor de escala
 %con o sin submuestreo.
 % Parametros:
+% - vidObj: objeto de clase VideoReader ya inicializado
 % - frameIni: numero de inicio de cuadro inicial de extraccion
 % - frameFin: numero de fin de cuadro final de extraccion
 % - folderFrames: carpeta de destino de los cuadros extraidos
-% - resolucion: Parametro para la resolucion o el factor de escala 
+% - resolucion: Parametro para la resolucion o factor de escala 
 % - select: parametro de seleccion para bajar la tasa de extraccion a la
 % mitad.
+% Retornos:
+% - frameFinExtraido: numero final de frame extraido, a modo de
+% verificacion
 % ========================================================================
+
 % MACROS
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
@@ -60,7 +65,7 @@ for iFrame = frameIni:frameFin
         frameFinExtraido = iFrame-1;
     end
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
-end % Fin for
+end
 
 close(barraWait);
 

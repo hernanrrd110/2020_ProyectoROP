@@ -1,49 +1,50 @@
-function [Mosaico] = mosaicobrisk(imGray1,imGray2,imRGB1,imRGB2,...
+function [Mosaico] = mosaicosurf(imGray1,imGray2,imRGB1,imRGB2,...
     mascBin1,mascBin2,param)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
+
 %Verificamos valores por default
 param = verificarparametros(param);
 
-minContrast = param.MinContrast;
-minQuality = param.MinQuality;
+metricThreshold = param.MetricThreshold;
+numScaleLevels = param.NumScaleLevels;
+numOctaves = param.NumOctaves;
 maxRatio = param.MaxRatio;
 matchThreshold = param.MatchThreshold;
-numOctaves = param.NumOctaves;
 upright = param.Upright;
 featureSize = param.FeatureSize;
 
-
-% Caracteristicas BRISK
-pointsBRISK1 = detectBRISKFeatures(imGray1,'MinContrast',minContrast,...
-    'MinQuality',minQuality,...
+% Caracteristicas SURF
+pointsSURF1 = detectSURFFeatures(imGray1,...
+    'MetricThreshold',metricThreshold,...
+    'NumScaleLevels',numScaleLevels,...
     'NumOctaves',numOctaves);
-pointsBRISK2 = detectBRISKFeatures(imGray2,'MinContrast',minContrast,...
-    'MinQuality',minQuality,...
+pointsSURF2 = detectSURFFeatures(imGray2,...
+    'MetricThreshold',metricThreshold,...
+    'NumScaleLevels',numScaleLevels,...
     'NumOctaves',numOctaves);
 
 % Extraemos Carateristicas
-% Las caracteristicas FREAK usan el descriptor FREAK de forma
-% predeterminada
-[fFREAK1,vptsBRISK1] = extractFeatures(imGray1,pointsBRISK1,...
+[fSURF1,vptsSURF1] = extractFeatures(imGray1,pointsSURF1,...
     'FeatureSize',featureSize,...
     'Upright',upright);
-[fFREAK2,vptsBRISK2] = extractFeatures(imGray2,pointsBRISK2,...
+[fSURF2,vptsSURF2] = extractFeatures(imGray2,pointsSURF2,...
     'FeatureSize',featureSize,...
     'Upright',upright);
 
 % Retrieve the locations of matched points.
-indexPairsBRISK = matchFeatures(fFREAK2,fFREAK1,...
+indexPairsSURF = matchFeatures(fSURF2,fSURF1,...
     'MatchThreshold',matchThreshold,...
     'MaxRatio',maxRatio);
 
-matchedPoBRISK1 = vptsBRISK1(indexPairsBRISK(:,2),:);
-matchedPoBRISK2 = vptsBRISK2(indexPairsBRISK(:,1),:);
+matchedPoSURF1 = vptsSURF1(indexPairsSURF(:,2),:);
+matchedPoSURF2 = vptsSURF2(indexPairsSURF(:,1),:);
 
-tforms = estimateGeometricTransform(matchedPoBRISK2,...
-    matchedPoBRISK1,...
-    param.TransfType, 'Confidence', 99.999,...
+tforms = estimateGeometricTransform(matchedPoSURF2,...
+    matchedPoSURF1,...
+    param.TransfType,...
+    'Confidence', 99.999,...
     'MaxNumTrials', 10000,...
     'MaxDistance',1.5);
 
@@ -122,6 +123,7 @@ elseif (param.Superponer == 'Imagen2')
     restaMasc = logical(restaMasc);
     mosaic(restaMasc) = imWarp1(restaMasc);
 end
+
 % Crear mascara completa del mosaico
 mascPan = mosaic;
 mascPan(mascPan>0) = 1;
@@ -149,7 +151,6 @@ elseif(param.Superponer == 'Imagen2')
     mosaicRGB = mosaicRGB + imWarp1RGB.*restaMasc;
 end
 
-
 % Estructura de salida
 Mosaico.imMosaico = mosaic;
 Mosaico.imMascMos = mascPan;
@@ -173,11 +174,14 @@ end
 function parametros = verificarparametros(parametros)
     % Verificamos que existan los parametros
     % En caso que no existan, les damos un valor predeterminado
-    if(~isfield(parametros,'MinContrast'))
-        parametros.MinContrast = 0.01;
+    if(~isfield(parametros,'MetricThreshold'))
+        parametros.MetricThreshold = 700;
     end
-    if(~isfield(parametros,'MinQuality'))
-        parametros.MinQuality = 0.2;
+    if(~isfield(parametros,'NumScaleLevels'))
+        parametros.NumScaleLevels = 4;
+    end
+    if(~isfield(parametros,'NumOctaves'))
+        parametros.NumOctaves = 3;
     end
     if(~isfield(parametros,'TransfType'))
         parametros.TransfType = 'affine';
@@ -187,9 +191,6 @@ function parametros = verificarparametros(parametros)
     end
     if(~isfield(parametros,'MatchThreshold'))
         parametros.MatchThreshold = 60;
-    end
-    if(~isfield(parametros,'NumOctaves'))
-        parametros.NumOctaves = 3;
     end
     if(~isfield(parametros,'FeatureSize'))
         parametros.FeatureSize = 64;
@@ -206,7 +207,7 @@ function parametros = verificarparametros(parametros)
     if(~isfield(parametros,'iterations'))
         parametros.iterations = 100;
     end
-        if(~isfield(parametros,'NonRigid'))
+    if(~isfield(parametros,'NonRigid'))
         parametros.NonRigid = false;
     end
     if(~isfield(parametros,'Superponer'))

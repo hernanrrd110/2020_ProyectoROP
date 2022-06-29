@@ -4,12 +4,12 @@ addpath('./Funciones');
 addpath('./Imagenes');
 warning('off')
 
-nameVid = 'ID_617';
+nameVid = 'ID_244';
 folderName = fullfile(cd,'./Frames_Videos',nameVid);
 folderMosaico = fullfile(folderName,'Imagenes_Mosaico');
 
-frame1 = 2;
-frame2 = 1061;
+frame1 = 1;
+frame2 = 731;
 
 nombreImFija = sprintf('Mosaico_%i.jpg',frame1);
 % nombreImFija = sprintf('Vasos_%i.jpg',frame1);
@@ -34,34 +34,36 @@ imRGB2 = cargarimagen( fullfile(folderMosaico,...
 param.FeatureSize = 128;
 param.Upright = true;
 param.TransfType = 'similarity';
+
 iter = 1;
-for minContrast = [0.1 0.15 0.2]
-    for minQuality = [0.1 0.2 0.3]
-        for maxRatio = [0.6 0.7 0.8]
+for metricThreshold = [600 700]
+    for numScaleLevels = [3 4 5]
+        for numOctaves = [4 5]
             for matchThreshold = [60 70 80]
-                for numOctaves = [4 5]
+                for maxRatio = [0.6 0.7 0.8]
                 try
-                    param.MinContrast = minContrast;
-                    param.MinQuality = minQuality;
+                    param.MetricThreshold = metricThreshold;
+                    param.NumScaleLevels = numScaleLevels;
+                    param.NumOctaves = numOctaves;
                     param.MaxRatio = maxRatio;
                     param.MatchThreshold = matchThreshold;
-                    param.NumOctaves = numOctaves;
-                    [Mosaico] = mosaicobrisk(imGray1,imGray2,...
+                    
+                    [Mosaico] = mosaicosurf(imGray1,imGray2,...
                         imRGB1,imRGB2,imMasc1,imMasc2,param);
                     valorCorr(iter) = ...
                         corr2(Mosaico.imWarp1,Mosaico.imWarp2);
                     fprintf('- Fig %i: corr %.4f\n',...
                         iter,valorCorr(iter));
-                    fprintf('  Parametros: %.2f %.2f %.1f %i %i \n',...
-                        minContrast,minQuality,maxRatio,matchThreshold,...
-                        numOctaves);
+                    fprintf('  Parametros: %i %i %i %.2f %i \n',...
+                        metricThreshold,numScaleLevels,numOctaves,...
+                        maxRatio,matchThreshold);
                     f = figure(iter); set(f,'WindowStyle','dock');
                     imshowpair(Mosaico.imWarp1,Mosaico.imWarp2);
                 catch
                     fprintf('- Puntos coincidentes no suficientes \n')
-                     fprintf('  Parametros: %.2f %.2f %.1f %i %i\n',...
-                        minContrast,minQuality,maxRatio,matchThreshold,...
-                        numOctaves);
+                     fprintf('  Parametros: %i %i %i %.2f %i\n',...
+                        metricThreshold,numScaleLevels,numOctaves,...
+                        maxRatio,matchThreshold);
                     valorCorr(iter) = 0;
                 end
                 iter = iter + 1;
@@ -71,7 +73,7 @@ for minContrast = [0.1 0.15 0.2]
     end
 end
 
-figure(); plot(1:iter-1,valorCorr)
+figure(); plot(1:iter-1,valorCorr,'*')
 
 % figure();imshowpair(Mosaico.imWarp1,Mosaico.imWarp2)
 % figure();imshow(Mosaico.imMosaico)

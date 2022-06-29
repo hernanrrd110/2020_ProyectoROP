@@ -5,25 +5,27 @@ addpath('./Funciones');
 addpath('./Imagenes');
 warning('off')
 
-nameVid = 'ID_69';
+nameVid = 'ID_510';
 folderName = fullfile(cd,'./Frames_Videos',nameVid);
 folderMosaico = fullfile(folderName,'Imagenes_Mosaico');
 
-frame1 = 165;
-frame2 = 819;
+frame1 = 497;
+frame2 = 432;
+% nombreImFija = sprintf('Mosaico_%i.jpg',frame1);
+nombreImFija = sprintf('Vasos_%i.jpg',frame1);
+nombreImMovil = sprintf('Vasos_%i.jpg',frame2);
 
 % Carga de imagenes
 [~,imGray1] = cargarimagen( fullfile(folderMosaico,...
-    sprintf('Vasos_%i.jpg',frame1) ) );
+    nombreImFija) );
 [~,imGray2] = cargarimagen( fullfile(folderMosaico,...
-    sprintf('Vasos_%i.jpg',frame2) ) );
-% imGray1 = imadjust(imGray1);
-% imGray2 = imadjust(imGray2);
+    nombreImMovil) );
+
 % Carga de Mascaras
 [~,imMasc1] = cargarimagen( fullfile(folderMosaico,...
-    sprintf('MascVasos_%i.jpg',frame1) ) );
+    strcat('Masc',nombreImFija) ) );
 [~,imMasc2] = cargarimagen( fullfile(folderMosaico,...
-    sprintf('MascVasos_%i.jpg',frame2) ) );
+    strcat('Masc',nombreImMovil) ) );
 
 % Parametros a iterar
 numOctaves = 3; %SURF

@@ -1,6 +1,15 @@
 function [mascaraHSV,puntajeHSV] = clasificadorhsv(imRGB,posCent,radio)
-%UNTITLED5 Summary of this function goes here
-%   Detailed explanation goes here
+%CLASIFICADORHSV Se obtiene mascara con colores retinales y puntacion HSV.
+%   La funcion da como resultado la imagen enmascarada con los pixeles que
+%   corresponden a la informacion de la retina y brinda un puntaje con
+%   respecto a numero de pixeles que hay en la lupa.
+%   Parametros:
+%   - imRGB: imagen (double) en formato RGB.
+%   - posCent: vector 2x1 con valores de la posicion del centro en X y Y.
+%   - radio: valor del radio de la circunferencia.
+%   Retornos:
+%   - mascaraHSV: imagen binaria (logical) con valor 1 en pixeles retinales
+%   y valor 0 en pixeles no retinales. 
 
 % Conversion a valores HSV
 imHSV = im2double(rgb2hsv(imRGB));

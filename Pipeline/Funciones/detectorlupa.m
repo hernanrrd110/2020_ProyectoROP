@@ -2,6 +2,8 @@ function [imCort, posCent, radio] = detectorlupa(imRGB,rangoRadios)
 %DETECTORLUPA Detecta la lupa por Transformada Hough y luego la enmascara
 %   * Parametros:
 %   - imRGB: imagen RGB (double), valores entre [0 , 1].
+%   - rangoRadios: vector 2x1 [radioMin radioMax]. Se especifica el radio
+%   minimo de busqueda (radioMin) y el radio maximo de busqueda (radioMax).
 %   * Salidas:
 %   - imCort: imagen RGB (double) con mascara no binaria que cubre la 
 %     imagen por fuera de la circunferencia.

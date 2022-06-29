@@ -3,18 +3,18 @@
 % Autor: Rodriguez Ruiz Diaz, Hernan Jorge
 % =========== Secuencia de procesamiento
 % Extraccion de frames
+% Deteccion de lupa
 % Clasificacion HSV
 % Clasificacion frecuencial
-% Deteccion de lupa
 % Vessel mapping
 % ===========
-
+ 
 %% ============== Carga Video
 clear all; close all; clc;
-% Agregado de carpetas de funciones e imagenes
+% Se utiliza carpetas aparte para el guardado de archivos de imagenes y de
+% funciones
 addpath('./Funciones');
 addpath('./Imagenes');
-warning('off');
 % MACROS
 SIN_SUBMUESTREO = 0;
 SUBMUESTREO = 1;
@@ -22,11 +22,12 @@ SIN_FONDO = 0;
 CON_FONDO = 1;
 
 % Declaracion del objeto para manejar el video
-nameVid = 'ID_323'; extVid = '.mov';
+% Se requiere especificar el ID del video y su extension
+nameVid = 'ID_244'; extVid = '.mov';
+% Funcion de creacion de variable de video
 [vidObj, framesNo] = ...
     cargarvideo(fullfile(cd,'./Frames_Videos',strcat(nameVid,extVid)));
 frameIni = 1; frameFin = framesNo;
-% --- Interfaz de usuario para elegir la carpeta de destino 
 % folderName = ...
 %     uigetdir('Introducir carperta de destino de extraccion de cuadros'); 
 folderName = fullfile(cd,'./Frames_Videos',nameVid);
@@ -47,15 +48,13 @@ end
 %     select = SIN_SUBMUESTREO;
 % end
 
-% Esta funcion, ademas de extraer los cuadros que no existen, tambien
-% resetea los metadatos
+% Esta funcion, ademas de extraer los cuadros que no existen
 frameIni = 1; frameFin = framesNo;
 frameFinExtraido = extraerframes(vidObj,...
     frameIni,frameFin,folderName,factorEscala,SIN_SUBMUESTREO);
 load(pathMetadatos);
 fprintf(' ======= %s - Extraccion de frames completa ========\n',...
-    horaminseg())
-
+    horaminseg());
 
 % Se extrae frameSelected de metadatos, un array que indica los frames que
 % se seleccionaron para el procesamiento
@@ -78,14 +77,10 @@ for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,1) == 1)
         % Creando la ruta del archivo de imagen
         pathImagen = fullfile(folderName,sprintf('Image_%i.jpg',iFrame));
-        % Verificamos que el archivo existe, en cuyo caso se emite la
-        % operacion
-%         pathLupa = fullfile(folderName,sprintf('Lupa_%i.jpg',iFrame));
         % Cargar imagen
         imRGB = im2double(imread(pathImagen));
-
         % Extramos la lupa
-        [imCort, aux1, aux2] = detectorlupa(imRGB,[420 570]);
+        [imCort, aux1, aux2] = detectorlupa(imRGB,[270 460]);
         if(~isempty(imCort)) 
             % Guardamos la imagen
 %             imwrite(imCort,pathLupa);
@@ -99,7 +94,6 @@ for iFrame = frameIni:frameFin
     end
     waitbar((iFrame-frameIni)/(frameFin-frameIni));
 end
-
 
 fprintf(' ======= %s - Deteccion de Lupa completa ========\n',horaminseg())
 fprintf(' -- Num total de detecciones: %i/%i \n',...
@@ -203,7 +197,7 @@ for iFrame = frameIni:frameFin
         % Cambio en la barra de progreso
         waitbar((iFrame-frameIni)/(frameFin-frameIni));
     end 
-
+ 
 end
 close(barraWait);
 fprintf(' ======= %s - Clasificacion de enfoque completa ========\n',...
@@ -215,7 +209,7 @@ save(pathMetadatos,'frameSelected','enfoque','-append');
 load(pathMetadatos);
 % vector de cuadros 
 vecFrames = (frameIni:frameFin)';
-% Valores del vector de Gauss Normalizado
+% Valores del vector de enfoque
 enfNorm = enfoque;
 enfNorm = enfNorm/max(enfNorm);
 enfNorm(isnan(enfNorm)) = 0; 
@@ -230,8 +224,7 @@ enfMaxLoc = enfNorm2(maxLoc);
 vecFramesMaxLoc = vecFrames2(maxLoc);
 
 % Seleccion primaria
-% aux = zeros(framesNo,1);
-umbralEnfoque = 0.77;
+umbralEnfoque = 0.8;
 aux = zeros(size(frameSelected(:,3)));
 aux(vecFramesMaxLoc(enfNorm(vecFramesMaxLoc)>= umbralEnfoque)) = 1;
 frameSelected(:,4) = aux;
@@ -239,9 +232,9 @@ frameSelected(:,4) = aux;
 fprintf(' -- Num de seleccion final: %i/%i \n',...
     nnz(frameSelected(:,4)),nnz(frameSelected(:,3)));
 
-save(pathMetadatos,'frameSelected',...
+save(pathMetadatos,'frameSelected','umbralEnfoque',...
     'enfoque','enfNorm','enfNorm2','vecFrames','vecFrames2','-append');
-
+%% Graficacion de valores de enfoque
 figure('Name', 'Valores de puntaje enfoque');
 plot(vecFrames2,enfNorm2);
 hold on; plot(vecFrames2, umbralEnfoque * ones(size(vecFrames2)));
@@ -255,7 +248,7 @@ vecFrames(frameSelected(:,4))
 %% Graficacion de Valores HSV
 
 figure('Name', 'Valores de clasificacion HSV');
-plot(vecFrames,clasHSV);
+plot(vecFrames(clasHSV~=0),clasHSV(clasHSV~=0));
 title 'HSV 1';
 
 %% ======================= Remocion artefactos ========================== 
@@ -371,6 +364,8 @@ barraWait = waitbar(0,'Resaltado de Imagen');
 frameIni = 1; frameFin = framesNo;
 for iFrame = frameIni:frameFin
     if(frameSelected(iFrame,4)== 1)
+        
+        
         % Path de la imagen
         pathImagen = fullfile(folderName,...
             sprintf('ImagenModif_%i.jpg',iFrame));
@@ -382,15 +377,19 @@ for iFrame = frameIni:frameFin
             sprintf('ImagenFinal2_%i.jpg',iFrame));
         % Lectura de imagen
         imRGB = im2double(imread(pathImagen));
-        imVasos = im2double(imread(pathVasos)); 
+        imVasos = im2double(imread(pathVasos));
+        [imVerde] = enmascararcirculo(imRGB(:,:,2),...
+            posCent(iFrame,:),radio(iFrame));
+               
+        [~, posiciones(iFrame,:,:)] = ...
+            recortelupa(imVerde ,...
+            posCent(iFrame,:), radio(iFrame),SIN_FONDO);
         
         posX1 = posiciones(iFrame,1,1);
         posX2 = posiciones(iFrame,1,2);
         posY1 = posiciones(iFrame,2,1);
         posY2 = posiciones(iFrame,2,2);
         
-        [imVerde] = enmascararcirculo(imRGB(:,:,2),...
-            posCent(iFrame,:),radio(iFrame));
         imVerdeRecort = imVerde(posY1:posY2,posX1:posX2);
         imVerdeMod = abs(imVerdeRecort-0.15*imVasos);
         

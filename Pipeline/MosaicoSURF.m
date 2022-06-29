@@ -1,159 +1,83 @@
 clear all; close all; clc;
-% Prueba de SURF
 % Cargar las imagenes del mosaico
 addpath('./Funciones');
 addpath('./Imagenes');
+warning('off')
 
-[~,imGray1] = cargarimagen('Vasos_165.jpg');
-[~,imGray2] = cargarimagen('Vasos_819.jpg');
+nameVid = 'ID_244';
+folderName = fullfile(cd,'./Frames_Videos',nameVid);
+folderMosaico = fullfile(folderName,'Imagenes_Mosaico');
 
-imGray1 = imadjust(imGray1);
-imGray2 = imadjust(imGray2);
+frame1 = 1;
+frame2 = 731;
 
-imGray2 = imresize(imGray2,size(imGray1));
+nombreImFija = sprintf('Mosaico_%i.jpg',frame1);
+% nombreImFija = sprintf('Vasos_%i.jpg',frame1);
+nombreImMovil = sprintf('Vasos_%i.jpg',frame2);
 
-% Pathmetadatos
-pathMetadatos = fullfile(cd,'./Frames_Videos/ID_69/metadatos.mat');
-load(pathMetadatos);
+% Carga de imagenes
+[~,imGray1] = cargarimagen( fullfile(folderMosaico,...
+    nombreImFija) );
+[~,imGray2] = cargarimagen( fullfile(folderMosaico,...
+    nombreImMovil) );
+imRGB1 = cargarimagen(fullfile(folderMosaico,...
+    replace(nombreImFija,'_','RGB_') ) );
+imRGB2 = cargarimagen( fullfile(folderMosaico,...
+    replace(nombreImMovil,'_','RGB_') ) );
 
-% Creacion de mascaras
-imRGB = cargarimagen('ImagenModif_165.jpg');
-mascBin1 = clasificadorhsv(imRGB,posCent(165,:), radio(165));
-% Strel de disco para comparacion con la funcion imclose
-se = strel('disk',40);
-mascBin1 = imclose(mascBin1,se);
-se = strel('disk',40);
-mascBin1 = imerode(mascBin1,se);
-CON_FONDO = 1;
-mascBin1 = recortelupa(mascBin1 ,...
-            posCent(165,:), radio(165),CON_FONDO); 
-        
-imRGB = cargarimagen('ImagenModif_819.jpg');
-mascBin2 = clasificadorhsv(imRGB,posCent(819,:), radio(819));
-% Strel de disco para comparacion con la funcion imclose
-se = strel('disk',40);
-mascBin2 = imclose(mascBin2,se);
-se = strel('disk',40);
-mascBin2 = imerode(mascBin2,se);
-mascBin2 = recortelupa(mascBin2 ,...
-            posCent(819,:), radio(819),CON_FONDO);
-        
-% imshowpair(imGray2, mascBin2,'Scaling','joint')
-%%
-% Find the SURF features.
-points1 = detectSURFFeatures(imGray1);
-points2 = detectSURFFeatures(imGray2);
+% Carga de Mascaras
+[~,imMasc1] = cargarimagen( fullfile(folderMosaico,...
+    strcat('Masc',nombreImFija) ) );
+[~,imMasc2] = cargarimagen( fullfile(folderMosaico,...
+    strcat('Masc',nombreImMovil) ) );
 
-% Extract the features.
-[f1,vpts1] = extractFeatures(imGray1,points1,'FeatureSize',128);
-[f2,vpts2] = extractFeatures(imGray2,points2,'FeatureSize',128);
+param.MetricThreshold = 600;
+param.NumScaleLevels = 4;
+param.NumOctaves = 5;
+param.MaxRatio = 0.8;
+param.MatchThreshold = 70;
+param.FeatureSize = 128;
+param.Upright = true;
+param.TransfType = 'similarity';
 
-% Retrieve the locations of matched points.
-indexPairs = matchFeatures(f2,f1);
-matchedPoints1 = vpts1(indexPairs(:,2),:);
-matchedPoints2 = vpts2(indexPairs(:,1),:);
+param.NonRigid = true;
+param.AccumulatedFieldSmoothing = 3.0;
+param.PyramidLevels = 1;
+param.iterations = [500];
 
-% Display the matching points.
-% The data still includes several outliers, but you can see the effects
-% of rotation and scaling on the display of matched features.
-figure; showMatchedFeatures(imGray1,imGray2,matchedPoints1,matchedPoints2);
-legend('matched points 1','matched points 2');
+param.Superponer = 'Imagen2';
 
-% Estimate the transformation between I(n) and I(n-1).
-tforms(2) = affine2d(eye(3));
+[Mosaico] = mosaicosurf(imGray1,imGray2,imRGB1,imRGB2,...
+    imMasc1,imMasc2,param);
+[Mosaico.imMosaico,Mosaico.imMascMos,...
+    Mosaico.imMosaicRGB,posiciones] = ...
+    acortarmosaico(Mosaico.imMosaico,Mosaico.imMascMos,...
+    Mosaico.imMosaicRGB);
+figure();imshowpair(Mosaico.imWarp1,Mosaico.imWarp2)
+figure();imshow(Mosaico.imMosaico)
+figure();imshow(Mosaico.imMosaicRGB)
 
-tforms(2) = estimateGeometricTransform(matchedPoints2,...
-    matchedPoints1,...
-    'affine', 'Confidence', 99.999,...
-    'MaxNumTrials', 10000);
+%% Guardado
+numMosaic = 2;
+imwrite(Mosaico.imMosaico,...
+    fullfile(folderMosaico,sprintf('Mosaico_%i.jpg',numMosaic)));
+imwrite(Mosaico.imMascMos,...
+    fullfile(folderMosaico,sprintf('MascMosaico_%i.jpg',numMosaic) ) )
+imwrite(Mosaico.imMosaicRGB,...
+    fullfile(folderMosaico,sprintf('MosaicoRGB_%i.jpg',numMosaic) ) )
+pathDatos = fullfile(folderMosaico,sprintf('Mosaico_%i.mat',numMosaic) );
 
+transform = Mosaico.transf;
+funcion = 'mosaicosurf';
+refDim = Mosaico.refDim;
+xLimits = Mosaico.xLimitsRef;
+yLimits = Mosaico.yLimitsRef;
 
-%%
-imageSize = size(imGray1);  % all the images are the same size
-% Compute the output limits for each transform
-for i = 1:numel(tforms)           
-    [xlim(i,:), ylim(i,:)] = outputLimits(tforms(i), [1 imageSize(2)],...
-        [1 imageSize(1)]);    
+if(param.NonRigid == false)
+    save(pathDatos,'param','nombreImFija','nombreImMovil','transform',...
+        'posiciones','funcion','xLimits','yLimits','refDim')
+else
+    dispField = Mosaico.dispField;
+    save(pathDatos,'param','nombreImFija','nombreImMovil','transform',...
+        'posiciones','dispField','funcion','xLimits','yLimits','refDim')
 end
-
-% Find the minimum and maximum output limits 
-xMin = min([1; xlim(:)]);
-xMax = max([imageSize(2); xlim(:)]);
-
-yMin = min([1; ylim(:)]);
-yMax = max([imageSize(1); ylim(:)]);
-
-% Width and height of panorama.
-width  = round(xMax - xMin);
-height = round(yMax - yMin);
-
-% Initialize the "empty" panorama.
-panorama = zeros([height width], 'like', imGray1);
-
-
-%% Etapa 4 - Crear Panorama por Mascara Binaria
-
-% Utiliza imwarp para mapear las imágenes en el panorama y utiliza 
-% vision.AlphaBlender para superponer las imágenes.
-
-blender = vision.AlphaBlender();
-blender.MaskSource = 'Input port';
-blender.Operation = 'Binary mask';
-% blender.OpacitySource = 'Input port';
-
-% Create a 2-D spatial reference object defining the size of the panorama.
-xLimits = [xMin xMax];
-yLimits = [yMin yMax];
-panoramaView = imref2d([height width], xLimits, yLimits);
-
-% Create the panorama.
-
-% Transform I into the panorama.
-warpedImage = imwarp(imGray1, tforms(1), 'OutputView', panoramaView);
-
-mask = imwarp(mascBin1,tforms(1),'OutputView', panoramaView);
-
-% Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage,mask);
-
-% Transform I into the panorama.
-warpedImage = imwarp(imGray2, tforms(2), 'OutputView', panoramaView);
-
-mask = imwarp(mascBin2,tforms(2),'OutputView', panoramaView);
-
-% Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage,mask);
-
-figure();
-imshow(panorama)
-
-%% Etapa 4 - Crear Panorama por Mezcla
-
-% Utiliza imwarp para mapear las imágenes en el panorama y utiliza 
-% vision.AlphaBlender para superponer las imágenes.
-
-blender = vision.AlphaBlender();
-blender.Operation = 'Blend';
-
-% Create a 2-D spatial reference object defining the size of the panorama.
-xLimits = [xMin xMax];
-yLimits = [yMin yMax];
-panoramaView = imref2d([height width], xLimits, yLimits);
-
-% Create the panorama.
-
-% Transform I into the panorama.
-warpedImage = imwarp(imGray1, tforms(1), 'OutputView', panoramaView);
-
-% Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage);
-
-% Transform I into the panorama.
-warpedImage = imwarp(imGray2, tforms(2), 'OutputView', panoramaView);
-
-% Overlay the warpedImage onto the panorama.
-panorama = blender.step(panorama, warpedImage);
-
-figure();
-imshow(panorama)
-

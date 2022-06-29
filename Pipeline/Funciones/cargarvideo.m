@@ -1,9 +1,18 @@
 function [vidObj,framesNo] = ...
     cargarvideo(pathVideo)
-%UNTITLED3 Summary of this function goes here
-%   Detailed explanation goes here
-    % Declaracion del objeto para manejar el video
-    if (nargin == 0)
+%CARGARVIDEO Crea objeto de video con la ruta especificada
+%   La funcion CARGAR VIDEO provee de alternativas para crear el objeto de
+%   VideoReader asociado a una ruta y puede proveer una interfaz de usuario
+%   para buscar un video en espcifico, y despliega informacion en consola
+%   Parametros:
+%   - pathVideo(opcional): ruta del video a buscar. Si no se especifica,
+%   brinda una interfaz de usuario para la seleccion del video
+%   Retornos:
+%   - vidObj: objeto de clase VideoReader de la ruta especificada
+%   - framesNo: numero de cuadros totales que tiene el video
+%   =======================================================================
+
+    if (nargin == 0) % Si no se pasa ruta
         [filename, path] = uigetfile ({'*.mp4;*.mov;*.avi;*.mkv;*.',...
             'All Video Files';'*.*','All Files'},...
             'Seleccione el video a extraer');

@@ -1,6 +1,14 @@
 function [mascaraCirc] = enmascararcirculo(imRGB,posCent,radio)
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+%ENMASCARARCIRCULO crea una mascara no binaria de la lupa
+%   La funcion enmascara los valores que se encuentran por fuera del valor
+%   del radio y centro especificados con valores nulos, y deja intactos los
+%   demas valores.
+%   Parametros:
+%   - imRGB: imagen (double) en formato RGB.
+%   - posCent: vector 2x1 con valores de la posicion del centro en X y Y.
+%   - radio: valor del radio de la circunferencia.
+%   Retornos:
+%   - mascaraCirc: imagen RBG enmascarada.
 
 mascaraCirc = imRGB;
 

@@ -1,6 +1,17 @@
 function [imCort, posiciones] = recortelupa(imRGB,posCent, radio,select)
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+%RECORTALUPA Recorta la imagen para contener solo la lupa
+%   La funcion realiza un recorte de la imagen en la region de interes
+%   Parametros:
+%   - imRGB: imagen (double) en formato RGB
+%   - posCent: vector 2x1 con valores de la posicion del centro en X y Y.
+%   - radio: valor del radio de la circunferencia.
+%   - select (opcional): parametro para hacer enmascaramiento adicional del
+%   fondo.
+%   Retornos:
+%   - imCort: imagen recortada
+%   - posiciones: vector 2x2, contiene las posiciones de la imagen
+%   recortadas relativas a la imagen original. Los datos de la primera fila
+%   corresponde a los valores en X y la segunda fila a los valores en Y.
 
 %MACROS
 SIN_FONDO = 0;
